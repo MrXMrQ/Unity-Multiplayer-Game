@@ -79,10 +79,19 @@ public class PlayerAbility : NetworkBehaviour
     }
 
     [ServerRpc]
-    void ThrowBallServerRpc(Vector3 pos, Vector3 direction, Color playerColor)
+    void ThrowBallServerRpc(Vector3 pos, Vector3 direction, Color playerColor, ServerRpcParams rpcParams = default)
     {
         GameObject ball = Instantiate(ballPrefab, pos, Quaternion.identity);
         ball.GetComponent<MeshRenderer>().material.color = playerColor;
+
+        // WICHTIG: Hier übergeben wir die ID des Absenders an das Ball-Skript
+        // rpcParams.Receive.SenderClientId gibt uns automatisch die ID des Spielers, der den RPC gefeuert hat
+        BallProjectile projectileScript = ball.GetComponent<BallProjectile>();
+        if (projectileScript != null)
+        {
+            projectileScript.shooterId = rpcParams.Receive.SenderClientId;
+        }
+
         ball.GetComponent<NetworkObject>().Spawn();
 
         Rigidbody rb = ball.GetComponent<Rigidbody>();

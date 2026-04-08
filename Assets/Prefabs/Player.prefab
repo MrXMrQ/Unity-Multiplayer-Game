@@ -772,13 +772,14 @@ GameObject:
   - component: {fileID: 3792752298178562569}
   - component: {fileID: 1776698729156518713}
   - component: {fileID: 88877399653513679}
+  - component: {fileID: 5222841379731443717}
   - component: {fileID: 2619530130615898335}
   - component: {fileID: 7100790716384692607}
-  - component: {fileID: 5222841379731443717}
+  - component: {fileID: 6320826573314017986}
   - component: {fileID: 6649933590631239428}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -878,46 +879,6 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &2619530130615898335
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7815849164461968766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 87ac9026ac0395c40b2c3a403f806ae4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  moveSpeed: 5
-  sprintMultiplier: 2
-  lookSpeed: 2
-  jumpForce: 5
-  gravity: 9.81
-  playerCamera: {fileID: 7894143043517255009}
-  firstPersonOffset: {x: 0, y: 0.6, z: 0}
-  thirdPersonOffset: {x: 0, y: 2, z: -4}
-  pauseMenuPanel: {fileID: 7500905593757191099}
---- !u!114 &7100790716384692607
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7815849164461968766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8c3cb3aaebb2ad4195b87e3ecb3aee2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  ballPrefab: {fileID: 5861792448334217664, guid: ceadc2d0e802cc34bba3cb3ee811b37c, type: 3}
-  wallPrefab: {fileID: 4748601972842819502, guid: 71a5f60be6b073e418e2faeefce40d2f, type: 3}
-  throwForce: 20
-  wallDistance: 3
-  wallDuration: 5
 --- !u!114 &5222841379731443717
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -964,6 +925,67 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &2619530130615898335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7815849164461968766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87ac9026ac0395c40b2c3a403f806ae4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  moveSpeed: 5
+  sprintMultiplier: 2
+  lookSpeed: 2
+  jumpForce: 5
+  gravity: 9.81
+  playerCamera: {fileID: 7894143043517255009}
+  firstPersonOffset: {x: 0, y: 0.6, z: 0}
+  thirdPersonOffset: {x: 0, y: 2, z: -4}
+  pauseMenuPanel: {fileID: 7500905593757191099}
+--- !u!114 &7100790716384692607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7815849164461968766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8c3cb3aaebb2ad4195b87e3ecb3aee2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  ballPrefab: {fileID: 5861792448334217664, guid: ceadc2d0e802cc34bba3cb3ee811b37c, type: 3}
+  wallPrefab: {fileID: 4748601972842819502, guid: 71a5f60be6b073e418e2faeefce40d2f, type: 3}
+  ballCooldown: 0.5
+  wallCooldown: 3
+  throwForce: 20
+  wallDistance: 3
+  wallDuration: 5
+--- !u!114 &6320826573314017986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7815849164461968766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8133c16649bc9f4990b4daf25013b4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  maxHealth: 100
+  currentHealth:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 100
 --- !u!143 &6649933590631239428
 CharacterController:
   m_ObjectHideFlags: 0
