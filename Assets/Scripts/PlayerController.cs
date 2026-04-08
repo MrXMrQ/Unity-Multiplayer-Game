@@ -19,11 +19,14 @@ public class PlayerController : NetworkBehaviour
     public Camera playerCamera;
 
     [Header("Camera Settings")]
+    public Vector3 firstPersonOffset = new Vector3(0, 0.6f, 0); // Position im Kopf
+    public Vector3 thirdPersonOffset = new Vector3(0, 2f, -4f); // Position hinter dem Spieler
     private bool isThirdPerson = false;
-    public Vector3 firstPersonOffset = new Vector3(0, 0.6f, 0);
-    public Vector3 thirdPersonOffset = new Vector3(0, 2f, -4f);
 
-    // Die NetworkVariable für die Farbe (Server schreibt, alle lesen)
+    [Header("UI Menü")]
+    public GameObject pauseMenuPanel;
+    private bool isPaused = false;
+
     private NetworkVariable<Color> playerColor = new NetworkVariable<Color>(
         Color.white,
         NetworkVariableReadPermission.Everyone,
@@ -37,13 +40,14 @@ public class PlayerController : NetworkBehaviour
         if (IsOwner)
         {
             playerCamera.enabled = true;
-            // Falls ein AudioListener auf der Kamera ist, aktivieren
             if (playerCamera.GetComponent<AudioListener>())
                 playerCamera.GetComponent<AudioListener>().enabled = true;
 
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            // Initialen Status setzen
+            isPaused = false;
+            if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
 
+            SetCursorState(false);
             StartCoroutine(DelayedSpawn());
         }
         else
@@ -53,7 +57,6 @@ public class PlayerController : NetworkBehaviour
                 playerCamera.GetComponent<AudioListener>().enabled = false;
         }
 
-        // Farbe initial zuweisen
         ApplyColor(playerColor.Value);
 
         if (IsServer)
@@ -67,18 +70,12 @@ public class PlayerController : NetworkBehaviour
         playerColor.OnValueChanged += OnColorChanged;
     }
 
-    private void OnColorChanged(Color previous, Color current)
-    {
-        ApplyColor(current);
-    }
+    private void OnColorChanged(Color previous, Color current) => ApplyColor(current);
 
     private void ApplyColor(Color color)
     {
         MeshRenderer renderer = GetComponent<MeshRenderer>();
-        if (renderer != null)
-        {
-            renderer.material.color = color;
-        }
+        if (renderer != null) renderer.material.color = color;
     }
 
     private IEnumerator DelayedSpawn()
@@ -93,14 +90,10 @@ public class PlayerController : NetworkBehaviour
         if (FixedSpawnPoint.IsReady)
         {
             if (controller != null) controller.enabled = false;
-
             transform.position = FixedSpawnPoint.Pos;
             transform.rotation = FixedSpawnPoint.Rot;
-
             yield return new WaitForFixedUpdate();
-
             if (controller != null) controller.enabled = true;
-            Debug.Log("Teleport abgeschlossen!");
         }
     }
 
@@ -109,33 +102,18 @@ public class PlayerController : NetworkBehaviour
         if (!IsOwner) return;
         if (controller == null || !controller.enabled) return;
 
-        // --- INPUTS ---
-        if (Input.GetKeyDown(KeyCode.F5)) isThirdPerson = !isThirdPerson;
+        // --- PAUSE TOGGLE ---
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+        }
 
-        float currentSpeed = moveSpeed * (Input.GetKey(KeyCode.LeftShift) ? sprintMultiplier : 1f);
-
-        // --- MAUS-LOOK (Links/Rechts dreht den Körper, Hoch/Runter die Kamera) ---
-        float mouseX = Input.GetAxis("Mouse X") * lookSpeed;
-        transform.Rotate(Vector3.up * mouseX);
-
-        float mouseY = Input.GetAxis("Mouse Y") * lookSpeed;
-        rotationX -= mouseY;
-        rotationX = Mathf.Clamp(rotationX, -90f, 90f);
-        playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
-
-        // --- KAMERA POSITION ---
-        playerCamera.transform.localPosition = isThirdPerson ? thirdPersonOffset : firstPersonOffset;
-
-        // --- BEWEGUNG ---
-        float moveX = Input.GetAxisRaw("Horizontal");
-        float moveZ = Input.GetAxisRaw("Vertical");
-        Vector3 moveDirection = (transform.right * moveX + transform.forward * moveZ).normalized;
-
-        // --- SCHWERKRAFT & SPRUNG ---
+        // --- SCHWERKRAFT (Wird IMMER berechnet, auch in Pause) ---
         if (controller.isGrounded)
         {
             verticalVelocity = -0.5f;
-            if (Input.GetButtonDown("Jump"))
+            // Springen nur erlauben, wenn NICHT pausiert
+            if (!isPaused && Input.GetButtonDown("Jump"))
             {
                 verticalVelocity = jumpForce;
             }
@@ -145,17 +123,62 @@ public class PlayerController : NetworkBehaviour
             verticalVelocity -= gravity * Time.deltaTime;
         }
 
+        // --- INPUT & LOOK (Nur wenn NICHT pausiert) ---
+        Vector3 moveDirection = Vector3.zero;
+        float currentSpeed = moveSpeed;
+
+        if (!isPaused)
+        {
+            if (Input.GetKeyDown(KeyCode.F5)) isThirdPerson = !isThirdPerson;
+
+            currentSpeed = moveSpeed * (Input.GetKey(KeyCode.LeftShift) ? sprintMultiplier : 1f);
+
+            // Look
+            float mouseX = Input.GetAxis("Mouse X") * lookSpeed;
+            transform.Rotate(Vector3.up * mouseX);
+
+            float mouseY = Input.GetAxis("Mouse Y") * lookSpeed;
+            rotationX -= mouseY;
+            rotationX = Mathf.Clamp(rotationX, -90f, 90f);
+            playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+
+            // Move Input
+            float moveX = Input.GetAxisRaw("Horizontal");
+            float moveZ = Input.GetAxisRaw("Vertical");
+            moveDirection = (transform.right * moveX + transform.forward * moveZ).normalized;
+        }
+
+        // --- FINALE BEWEGUNG ANWENDEN ---
+        // (Wichtig: verticalVelocity ist hier immer enthalten, damit man weiterfällt!)
         Vector3 finalMovement = moveDirection * currentSpeed;
         finalMovement.y = verticalVelocity;
-
         controller.Move(finalMovement * Time.deltaTime);
 
-        // Cursor lösen
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
+        // Kamera Position
+        playerCamera.transform.localPosition = isThirdPerson ? thirdPersonOffset : firstPersonOffset;
+    }
+
+    public void TogglePause()
+    {
+        isPaused = !isPaused;
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(isPaused);
+        SetCursorState(isPaused);
+    }
+
+    private void SetCursorState(bool paused)
+    {
+        Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = paused;
+    }
+
+    public void QuitGame()
+    {
+        Debug.Log("Quit");
+        NetworkManager.Singleton.Shutdown();
+        Application.Quit();
+
+        UnityEditor.EditorApplication.isPlaying = false;
+
     }
 
     public override void OnNetworkDespawn()
