@@ -1,8 +1,8 @@
 using Unity.Netcode;
-using Unity.Netcode.Transports;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Unity.Netcode.Transports.UTP; // Direktes Using für UTP
 
 public class MainMenuControl : MonoBehaviour
 {
@@ -16,37 +16,58 @@ public class MainMenuControl : MonoBehaviour
 
     private void Start()
     {
-        // 1. Host Button Logik
+        // --- AUTOMATISCHER SERVER START (Für Ubuntu/Docker) ---
+        // Diese Prüfung muss AUSSERHALB der Button-Logik stehen
+        if (UnityEngine.SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+        {
+            Debug.Log("Dedicated Server erkannt! Initialisiere Netzwerk...");
+
+            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+            if (transport != null)
+            {
+                transport.ConnectionData.Address = "0.0.0.0";
+                // Wir erzwingen das Erlauben von Remote-Verbindungen im Code
+            }
+
+            if (NetworkManager.Singleton.StartServer())
+            {
+                Debug.Log("Server erfolgreich gestartet. Lade Szene...");
+                NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+            }
+            return; // Beende Start(), da wir auf dem Server keine Buttons brauchen
+        }
+
+        // --- HOST BUTTON (Für lokales Testen) ---
         hostButton.onClick.AddListener(() =>
         {
-            // Startet Server UND Client gleichzeitig
             if (NetworkManager.Singleton.StartHost())
             {
                 Debug.Log("Host gestartet...");
-                // Der Host wechselt für alle die Szene zum Gameplay
                 NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
         });
 
-        // 2. Join Button Logik
+        // --- JOIN BUTTON (Für deinen Windows Client) ---
         joinButton.onClick.AddListener(() =>
         {
-            // Statt: var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-            // Nutze den voll ausgeschriebenen Pfad:
-            var transport = NetworkManager.Singleton.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
 
             string targetIp = ipInputField.text;
             if (string.IsNullOrEmpty(targetIp))
             {
-                targetIp = "127.0.0.1"; // Default, falls nichts eingegeben wurde
+                targetIp = "127.0.0.1";
             }
 
             transport.ConnectionData.Address = targetIp;
+            Debug.Log("Versuche Verbindung zu: " + targetIp);
 
-            // Startet nur den Client
             if (NetworkManager.Singleton.StartClient())
             {
-                Debug.Log("Verbinde zu: " + targetIp);
+                Debug.Log("Client gestartet...");
+            }
+            else
+            {
+                Debug.LogError("Client konnte nicht gestartet werden!");
             }
         });
     }
