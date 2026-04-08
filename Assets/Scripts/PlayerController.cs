@@ -97,22 +97,42 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
+    // Füge diese Variable oben bei den anderen privaten Variablen hinzu:
+    private Vector3 airMoveDirection;
+
     void Update()
     {
         if (!IsOwner) return;
         if (controller == null || !controller.enabled) return;
 
-        // --- PAUSE TOGGLE ---
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape)) TogglePause();
+
+        // --- 1. MAUS-LOOK (Immer berechnen, außer in Pause) ---
+        if (!isPaused)
         {
-            TogglePause();
+            float mouseX = Input.GetAxis("Mouse X") * lookSpeed;
+            transform.Rotate(Vector3.up * mouseX);
+            float mouseY = Input.GetAxis("Mouse Y") * lookSpeed;
+            rotationX -= mouseY;
+            rotationX = Mathf.Clamp(rotationX, -90f, 90f);
+            playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+            if (Input.GetKeyDown(KeyCode.F5)) isThirdPerson = !isThirdPerson;
         }
 
-        // --- SCHWERKRAFT (Wird IMMER berechnet, auch in Pause) ---
+        // --- 2. BEWEGUNGS-INPUT BERECHNEN ---
+        float moveX = 0;
+        float moveZ = 0;
+        if (!isPaused)
+        {
+            moveX = Input.GetAxisRaw("Horizontal");
+            moveZ = Input.GetAxisRaw("Vertical");
+        }
+        Vector3 inputDir = (transform.right * moveX + transform.forward * moveZ).normalized;
+
+        // --- 3. SCHWERKRAFT & SPRUNG ---
         if (controller.isGrounded)
         {
             verticalVelocity = -0.5f;
-            // Springen nur erlauben, wenn NICHT pausiert
             if (!isPaused && Input.GetButtonDown("Jump"))
             {
                 verticalVelocity = jumpForce;
@@ -120,41 +140,27 @@ public class PlayerController : NetworkBehaviour
         }
         else
         {
+            // In der Luft: Schwerkraft wirkt ein
             verticalVelocity -= gravity * Time.deltaTime;
         }
 
-        // --- INPUT & LOOK (Nur wenn NICHT pausiert) ---
-        Vector3 moveDirection = Vector3.zero;
+        // --- 4. FINALE BEWEGUNG KOMBINIEREN ---
+        // Wir berechnen die horizontale Bewegung (X/Z)
         float currentSpeed = moveSpeed;
+        if (controller.isGrounded && Input.GetKey(KeyCode.LeftShift))
+            currentSpeed *= sprintMultiplier;
 
-        if (!isPaused)
-        {
-            if (Input.GetKeyDown(KeyCode.F5)) isThirdPerson = !isThirdPerson;
+        // Das ist der Clou: inputDir ist in der Luft nicht 0, wenn du WASD drückst!
+        Vector3 horizontalMovement = inputDir * currentSpeed;
 
-            currentSpeed = moveSpeed * (Input.GetKey(KeyCode.LeftShift) ? sprintMultiplier : 1f);
-
-            // Look
-            float mouseX = Input.GetAxis("Mouse X") * lookSpeed;
-            transform.Rotate(Vector3.up * mouseX);
-
-            float mouseY = Input.GetAxis("Mouse Y") * lookSpeed;
-            rotationX -= mouseY;
-            rotationX = Mathf.Clamp(rotationX, -90f, 90f);
-            playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
-
-            // Move Input
-            float moveX = Input.GetAxisRaw("Horizontal");
-            float moveZ = Input.GetAxisRaw("Vertical");
-            moveDirection = (transform.right * moveX + transform.forward * moveZ).normalized;
-        }
-
-        // --- FINALE BEWEGUNG ANWENDEN ---
-        // (Wichtig: verticalVelocity ist hier immer enthalten, damit man weiterfällt!)
-        Vector3 finalMovement = moveDirection * currentSpeed;
+        // Y-Komponente (Fallen/Springen) hinzufügen
+        Vector3 finalMovement = horizontalMovement;
         finalMovement.y = verticalVelocity;
+
+        // Alles mit DeltaTime bewegen
         controller.Move(finalMovement * Time.deltaTime);
 
-        // Kamera Position
+        // Kamera Position aktualisieren
         playerCamera.transform.localPosition = isThirdPerson ? thirdPersonOffset : firstPersonOffset;
     }
 
@@ -174,11 +180,20 @@ public class PlayerController : NetworkBehaviour
     public void QuitGame()
     {
         Debug.Log("Quit");
-        NetworkManager.Singleton.Shutdown();
+
+        // Trenne die Netzwerkverbindung sauber
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.Shutdown();
+        }
+
+        // Dieser Teil beendet die fertig gebaute .exe oder App
         Application.Quit();
 
+        // Dieser Teil beendet den Play-Modus NUR im Unity Editor
+#if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
-
+#endif
     }
 
     public override void OnNetworkDespawn()
