@@ -25,17 +25,37 @@ public class PlayerHealth : NetworkBehaviour
     }
 
     // Diese Funktion wird vom Ball-Skript auf dem Server aufgerufen
+    // Auf dem Server gerufen
     public void TakeDamage(int damage)
     {
         if (!IsServer) return;
 
         currentHealth.Value -= damage;
-        Debug.Log($"Server: Spieler {OwnerClientId} hat {damage} Schaden erlitten.");
 
-        // WICHTIG: Der Server muss hier prüfen, ob der Spieler sterben muss
         if (currentHealth.Value <= 0)
         {
-            Die();
+            currentHealth.Value = 100; // Leben direkt heilen
+            RespawnClientRpc(); // Dem Client sagen: "Teleportier dich!"
+        }
+    }
+
+    [ClientRpc]
+    void RespawnClientRpc()
+    {
+        if (IsOwner) // Nur der betroffene Spieler führt das aus
+        {
+            var controller = GetComponent<CharacterController>();
+
+            // 1. Controller kurz ausmachen (wichtig!)
+            if (controller != null) controller.enabled = false;
+
+            // 2. Position setzen (Hol dir die Position vom SpawnManager)
+            transform.position = new Vector3(0, 30, 0); // Oder dein Spawn-Punkt
+
+            // 3. Controller wieder anmachen
+            if (controller != null) controller.enabled = true;
+
+            Debug.Log("Respawn lokal ausgeführt!");
         }
     }
 

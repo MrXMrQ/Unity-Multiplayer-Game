@@ -1,35 +1,54 @@
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class DamageZone : NetworkBehaviour
 {
     [Header("Settings")]
     public int damageAmount = 25;
-    public float damageInterval = 1.0f; // Alle wieviele Sekunden bekommt man Schaden?
+    public float damageInterval = 1.0f;
 
-    // Wir speichern, wann welcher Spieler das letzte Mal Schaden bekommen hat
-    private System.Collections.Generic.Dictionary<ulong, float> lastDamageTime = new System.Collections.Generic.Dictionary<ulong, float>();
+    // Speichert den Zeitpunkt des letzten Schadens pro Spieler (Key = ClientId)
+    private Dictionary<ulong, float> lastDamageTime = new Dictionary<ulong, float>();
 
     private void OnTriggerStay(Collider other)
     {
-        // Auf Linux Dedicated Servern ist IsServer immer true, 
-        // aber wir prüfen zur Sicherheit trotzdem.
+        // Schadensberechnung findet NUR auf dem Server statt
         if (!IsServer) return;
 
         if (other.TryGetComponent(out PlayerHealth health))
         {
-            // Wir erzwingen eine Prüfung der NetworkVariable
-            health.TakeDamage(damageAmount);
+            ulong clientId = health.OwnerClientId;
+
+            // Prüfen, ob der Spieler bereits in der Liste ist
+            if (!lastDamageTime.ContainsKey(clientId))
+            {
+                // Erster Treffer: Schaden zufügen und Zeit registrieren
+                ApplyDamage(health, clientId);
+            }
+            else if (Time.time >= lastDamageTime[clientId] + damageInterval)
+            {
+                // Intervall abgelaufen: Erneut Schaden zufügen
+                ApplyDamage(health, clientId);
+            }
         }
+    }
+
+    private void ApplyDamage(PlayerHealth health, ulong clientId)
+    {
+        health.TakeDamage(damageAmount);
+        lastDamageTime[clientId] = Time.time;
+        Debug.Log($"Lava-Schaden an Client {clientId}. Nächster Tick in {damageInterval}s");
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (!IsServer) return;
 
-        // Wenn der Spieler die Lava verlässt, löschen wir ihn aus der Liste
         if (other.TryGetComponent(out PlayerHealth health))
         {
+            // Wenn der Spieler die Lava verlässt, löschen wir den Eintrag,
+            // damit er beim nächsten Mal sofort wieder Schaden bekommt.
             lastDamageTime.Remove(health.OwnerClientId);
         }
     }
