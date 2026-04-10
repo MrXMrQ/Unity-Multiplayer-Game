@@ -5,6 +5,7 @@ public class PlayerHealth : NetworkBehaviour
 {
     [Header("Health Settings")]
     public int maxHealth = 100;
+    public HealthBar healthBar;
 
     // Die NetworkVariable synchronisiert den Wert automatisch für alle Clients
     public NetworkVariable<int> currentHealth = new NetworkVariable<int>(
@@ -18,6 +19,7 @@ public class PlayerHealth : NetworkBehaviour
         if (IsServer)
         {
             currentHealth.Value = maxHealth;
+            healthBar.SetMaxHealth(maxHealth);
         }
 
         // Wir abonnieren eine Funktion, die aufgerufen wird, wenn sich die Leben ändern
@@ -31,10 +33,12 @@ public class PlayerHealth : NetworkBehaviour
         if (!IsServer) return;
 
         currentHealth.Value -= damage;
+        healthBar.SetHealth(currentHealth.Value);
 
         if (currentHealth.Value <= 0)
         {
             currentHealth.Value = 100; // Leben direkt heilen
+            healthBar.SetHealth(currentHealth.Value);
             RespawnClientRpc(); // Dem Client sagen: "Teleportier dich!"
         }
     }

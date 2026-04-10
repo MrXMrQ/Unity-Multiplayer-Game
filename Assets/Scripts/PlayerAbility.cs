@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class PlayerAbility : NetworkBehaviour
 {
@@ -10,6 +11,8 @@ public class PlayerAbility : NetworkBehaviour
     [Header("Cooldowns (in Sekunden)")]
     public float ballCooldown = 0.5f;
     public float wallCooldown = 3.0f;
+    public CooldownBar ballCooldownBar;
+    public CooldownBar wallCooldownBar;
 
     [Header("Settings")]
     public float throwForce = 30f;
@@ -20,46 +23,45 @@ public class PlayerAbility : NetworkBehaviour
     private float nextWallTime = 0f;
     private PlayerController playerController;
 
+    private Dictionary<ulong, float> lastServerBallTime = new Dictionary<ulong, float>();
+    private Dictionary<ulong, float> lastServerWallTime = new Dictionary<ulong, float>();
+
     void Start()
     {
         playerController = GetComponent<PlayerController>();
+        ballCooldownBar.SetMaxCoolDown(ballCooldown);
+        wallCooldownBar.SetMaxCoolDown(wallCooldown);
     }
 
     void Update()
     {
-        if (!IsOwner || playerController == null) return;
+        if (!IsOwner || playerController == null || PlayerController.IsGamePaused) return;
 
-        if (PlayerController.IsGamePaused) return;
 
-        // --- LINKSSKLICK: BALL ---
-        if (Input.GetMouseButtonDown(0))
+        // LOKALER CHECK: Für direktes Feedback (damit der Client nicht unnötig RPCs schickt)
+        if (Input.GetMouseButtonDown(0) && Time.time >= nextBallTime)
         {
-            if (Time.time >= nextBallTime)
-            {
-                ShootBall();
-                nextBallTime = Time.time + ballCooldown;
-            }
-            else
-            {
-                float remaining = nextBallTime - Time.time;
-                Debug.Log($"Ball Cooldown: {remaining:F1}s verbleibend");
-            }
+            ShootBall();
+            nextBallTime = Time.time + ballCooldown;
         }
 
-        // --- RECHTSKLICK: WAND ---
-        if (Input.GetMouseButtonDown(1))
+        if (Input.GetMouseButtonDown(1) && Time.time >= nextWallTime)
         {
-            if (Time.time >= nextWallTime)
-            {
-                PlaceWall();
-                nextWallTime = Time.time + wallCooldown;
-            }
-            else
-            {
-                float remaining = nextWallTime - Time.time;
-                Debug.Log($"Wand Cooldown: {remaining:F1}s verbleibend");
-            }
+            PlaceWall();
+            nextWallTime = Time.time + wallCooldown;
         }
+
+        // --- DEIN WUNSCH (KORRIGIERT) ---
+        // Berechnung: Zielzeit in der Zukunft MINUS aktuelle Zeit
+        float currentWallCooldown = Mathf.Max(0, nextWallTime - Time.time);
+        float currentBallCooldown = Mathf.Max(0, nextBallTime - Time.time);
+
+        // Jetzt kannst du die Werte an deine CooldownBars übergeben:
+        if (wallCooldownBar != null) ballCooldownBar.SetCooldown(currentBallCooldown);
+        if (wallCooldownBar != null) wallCooldownBar.SetCooldown(currentWallCooldown);
+
+        // Debug Log (zeigt jetzt z.B. 3.0 -> 0.0 an)
+        Debug.Log($"Wand Cooldown: {currentWallCooldown:F1}s");
     }
 
     private void ShootBall()
@@ -91,39 +93,77 @@ public class PlayerAbility : NetworkBehaviour
     [ServerRpc]
     void ThrowBallServerRpc(Vector3 pos, Vector3 direction, Color playerColor, ServerRpcParams rpcParams = default)
     {
-        GameObject ball = Instantiate(ballPrefab, pos, Quaternion.identity);
-        BallProjectile projectile = ball.GetComponent<BallProjectile>();
-        projectile.shooterId = rpcParams.Receive.SenderClientId;
+        ulong clientId = rpcParams.Receive.SenderClientId;
 
-        NetworkObject netObj = ball.GetComponent<NetworkObject>();
-        netObj.Spawn();
+        // Sicherheits-Check: Falls der Client noch nicht im Dictionary ist
+        if (!lastServerBallTime.ContainsKey(clientId)) lastServerBallTime[clientId] = 0f;
 
-        projectile.ballColor.Value = playerColor;
-
-        // Berechnung der Geschwindigkeit
-        Vector3 targetVelocity = direction * throwForce;
-
-        // 1. Physik auf dem Server setzen (für Kollisionsberechnung)
-        Rigidbody rb = ball.GetComponent<Rigidbody>();
-        if (rb != null)
+        // Prüfung gegen die Netzwerk-Zeit des Servers
+        if (NetworkManager.Singleton.ServerTime.Time >= lastServerBallTime[clientId])
         {
-            rb.isKinematic = false;
-            rb.linearVelocity = targetVelocity;
+            // Cooldown für diesen Client auf dem Server setzen
+            lastServerBallTime[clientId] = (float)NetworkManager.Singleton.ServerTime.Time + ballCooldown;
+
+            // --- Ball Instanziieren ---
+            GameObject ball = Instantiate(ballPrefab, pos, Quaternion.identity);
+            BallProjectile projectile = ball.GetComponent<BallProjectile>();
+            projectile.shooterId = clientId;
+
+            NetworkObject netObj = ball.GetComponent<NetworkObject>();
+            netObj.Spawn();
+
+            projectile.ballColor.Value = playerColor;
+
+            // Physik-Berechnung
+            Vector3 targetVelocity = direction * throwForce;
+
+            // 1. Physik auf dem Server
+            Rigidbody rb = ball.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = false;
+                rb.linearVelocity = targetVelocity;
+            }
+
+            // 2. Physik auf Clients synchronisieren
+            projectile.FireBallClientRpc(targetVelocity);
+
+            Destroy(ball, 5f);
         }
-
-        // 2. Physik auf allen Clients setzen (damit sie den Ball fliegen sehen)
-        projectile.FireBallClientRpc(targetVelocity);
-
-        Destroy(ball, 5f);
+        else
+        {
+            Debug.LogWarning($"Server: Ball-Spam geblockt für Client {clientId}");
+        }
     }
 
     [ServerRpc]
-    void PlaceWallServerRpc(Vector3 pos, Quaternion rot, Color playerColor)
+    void PlaceWallServerRpc(Vector3 pos, Quaternion rot, Color playerColor, ServerRpcParams rpcParams = default)
     {
-        GameObject wall = Instantiate(wallPrefab, pos, rot);
-        wall.GetComponent<MeshRenderer>().material.color = playerColor;
-        wall.GetComponent<NetworkObject>().Spawn();
+        ulong clientId = rpcParams.Receive.SenderClientId;
 
-        Destroy(wall, wallDuration);
+        // Sicherheits-Check: Falls der Client noch nicht im Dictionary ist
+        if (!lastServerWallTime.ContainsKey(clientId)) lastServerWallTime[clientId] = 0f;
+
+        // Prüfung gegen die Netzwerk-Zeit des Servers
+        if (NetworkManager.Singleton.ServerTime.Time >= lastServerWallTime[clientId])
+        {
+            // Cooldown für diesen Client auf dem Server setzen
+            lastServerWallTime[clientId] = (float)NetworkManager.Singleton.ServerTime.Time + wallCooldown;
+
+            // --- Wand Instanziieren ---
+            GameObject wall = Instantiate(wallPrefab, pos, rot);
+
+            // Farbe setzen (Sollte idealerweise über NetworkVariable oder MaterialPropertyBlock laufen, 
+            // aber für den Moment setzen wir es direkt)
+            wall.GetComponent<MeshRenderer>().material.color = playerColor;
+
+            wall.GetComponent<NetworkObject>().Spawn();
+
+            Destroy(wall, wallDuration);
+        }
+        else
+        {
+            Debug.LogWarning($"Server: Wand-Spam geblockt für Client {clientId}");
+        }
     }
 }
