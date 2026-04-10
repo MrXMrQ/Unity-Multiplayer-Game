@@ -62,8 +62,16 @@ public class PlayerAbility : NetworkBehaviour
 
     private void ShootBall()
     {
-        Vector3 spawnPos = playerController.playerCamera.transform.position + (playerController.playerCamera.transform.forward * 1.5f);
+        // 1. Startpunkt: Fest am Spieler (z.B. Brusthöhe), nicht an der Kamera
+        // Wir nehmen die Spielerposition und gehen 1.5m hoch
+        Vector3 playerSpinePos = transform.position + Vector3.up;
+
+        // 2. Richtung: Aber wir schießen dorthin, wo die Kamera hinschaut
         Vector3 shootDir = playerController.playerCamera.transform.forward;
+
+        // 3. Offset: Damit wir uns nicht selbst treffen, schieben wir den Startpunkt 1m vor den Spieler
+        Vector3 spawnPos = playerSpinePos + (transform.forward * 1.0f);
+
         ThrowBallServerRpc(spawnPos, shootDir, GetComponent<MeshRenderer>().material.color);
     }
 
@@ -82,20 +90,27 @@ public class PlayerAbility : NetworkBehaviour
     void ThrowBallServerRpc(Vector3 pos, Vector3 direction, Color playerColor, ServerRpcParams rpcParams = default)
     {
         GameObject ball = Instantiate(ballPrefab, pos, Quaternion.identity);
-        ball.GetComponent<MeshRenderer>().material.color = playerColor;
+        BallProjectile projectile = ball.GetComponent<BallProjectile>();
+        projectile.shooterId = rpcParams.Receive.SenderClientId;
 
-        // WICHTIG: Hier übergeben wir die ID des Absenders an das Ball-Skript
-        // rpcParams.Receive.SenderClientId gibt uns automatisch die ID des Spielers, der den RPC gefeuert hat
-        BallProjectile projectileScript = ball.GetComponent<BallProjectile>();
-        if (projectileScript != null)
+        NetworkObject netObj = ball.GetComponent<NetworkObject>();
+        netObj.Spawn();
+
+        projectile.ballColor.Value = playerColor;
+
+        // Berechnung der Geschwindigkeit
+        Vector3 targetVelocity = direction * throwForce;
+
+        // 1. Physik auf dem Server setzen (für Kollisionsberechnung)
+        Rigidbody rb = ball.GetComponent<Rigidbody>();
+        if (rb != null)
         {
-            projectileScript.shooterId = rpcParams.Receive.SenderClientId;
+            rb.isKinematic = false;
+            rb.linearVelocity = targetVelocity;
         }
 
-        ball.GetComponent<NetworkObject>().Spawn();
-
-        Rigidbody rb = ball.GetComponent<Rigidbody>();
-        if (rb != null) rb.AddForce(direction * throwForce, ForceMode.Impulse);
+        // 2. Physik auf allen Clients setzen (damit sie den Ball fliegen sehen)
+        projectile.FireBallClientRpc(targetVelocity);
 
         Destroy(ball, 5f);
     }

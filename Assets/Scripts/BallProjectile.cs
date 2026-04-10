@@ -3,34 +3,52 @@ using UnityEngine;
 
 public class BallProjectile : NetworkBehaviour
 {
-    public int damageAmount = 20;
-    // Wir speichern die ID des Spielers, der diesen Ball geschossen hat
+    public NetworkVariable<Color> ballColor = new NetworkVariable<Color>(Color.white);
     public ulong shooterId;
 
-    private void OnCollisionEnter(Collision collision)
+    public override void OnNetworkSpawn()
     {
-        Debug.Log($"Ball hat etwas getroffen: {collision.gameObject.name}");
+        ApplyColor(ballColor.Value);
+        ballColor.OnValueChanged += (oldColor, newColor) => ApplyColor(newColor);
+    }
+    [ClientRpc]
+    public void FireBallClientRpc(Vector3 velocity)
+    {
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.linearVelocity = velocity;
+        }
+    }
+
+    private void ApplyColor(Color c)
+    {
+        GetComponent<MeshRenderer>().material.color = c;
+    }
+
+    public void OnCollisionEnter(Collision collision)
+    {
         if (!IsServer) return;
 
         if (collision.gameObject.TryGetComponent(out PlayerHealth health))
         {
-            // Wir prüfen, ob das getroffene Objekt ein ECHTER Spieler ist 
-            // und ob dieser Spieler der Schütze war.
-            // Ein Bot hat oft keine NetworkObject-Ownership oder ist Server-Owned.
+            ulong hitPlayerId = health.OwnerClientId;
 
-            bool isHitObjectActualPlayer = health.GetComponent<NetworkObject>().IsPlayerObject;
+            // Logik-Fix: Wenn das getroffene Objekt kein "PlayerObject" ist (z.B. Bot),
+            // dann ignorieren wir den ID-Vergleich und machen immer Schaden.
+            bool isRealPlayer = health.GetComponent<NetworkObject>().IsPlayerObject;
 
-            if (isHitObjectActualPlayer && health.OwnerClientId == shooterId)
+            if (isRealPlayer && hitPlayerId == shooterId)
             {
-                return; // Eigener Spieler getroffen -> ignorieren
+                return; // Selbsschaden verhindern
             }
 
-            // Wenn es ein Bot ist ODER ein anderer Spieler -> Schaden!
-            health.TakeDamage(damageAmount);
+            health.TakeDamage(20);
 
-            if (GetComponent<NetworkObject>().IsSpawned)
+            if (NetworkObject.IsSpawned)
             {
-                GetComponent<NetworkObject>().Despawn();
+                NetworkObject.Despawn();
             }
         }
     }

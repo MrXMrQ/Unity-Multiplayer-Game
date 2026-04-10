@@ -12,22 +12,14 @@ public class DamageZone : NetworkBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        // WICHTIG: Nur der Server darf Leben abziehen
+        // Auf Linux Dedicated Servern ist IsServer immer true, 
+        // aber wir prüfen zur Sicherheit trotzdem.
         if (!IsServer) return;
 
-        // Prüfen, ob das getroffene Objekt ein Spieler ist
         if (other.TryGetComponent(out PlayerHealth health))
         {
-            ulong clientId = health.OwnerClientId;
-
-            // Cooldown-Check für kontinuierlichen Schaden (damit man nicht instant stirbt)
-            if (!lastDamageTime.ContainsKey(clientId) || Time.time >= lastDamageTime[clientId] + damageInterval)
-            {
-                health.TakeDamage(damageAmount);
-                lastDamageTime[clientId] = Time.time;
-
-                Debug.Log($"Lava fügt Spieler {clientId} Schaden zu. Restleben: {health.currentHealth.Value}");
-            }
+            // Wir erzwingen eine Prüfung der NetworkVariable
+            health.TakeDamage(damageAmount);
         }
     }
 

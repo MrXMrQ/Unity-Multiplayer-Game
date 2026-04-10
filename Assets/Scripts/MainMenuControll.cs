@@ -14,6 +14,21 @@ public class MainMenuControl : MonoBehaviour
     [Header("Einstellungen")]
     public string gameSceneName = "GameScene";
 
+    void Awake()
+    {
+        // Falls mehrere Monitore vorhanden sind
+        if (Display.displays.Length > 1)
+        {
+            // Display 0 ist der Hauptmonitor in Windows
+            Display.displays[0].Activate();
+        }
+
+        // Zwingt das Fenster auf den Primären Monitor
+        // Dies setzt die Position des Fensters zurück
+        PlayerPrefs.DeleteKey("UnitySelectMonitor");
+        Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, FullScreenMode.FullScreenWindow);
+    }
+
     private void Start()
     {
         // --- AUTOMATISCHER SERVER START (Für Ubuntu/Docker) ---
