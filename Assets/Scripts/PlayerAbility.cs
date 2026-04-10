@@ -29,6 +29,8 @@ public class PlayerAbility : NetworkBehaviour
     {
         if (!IsOwner || playerController == null) return;
 
+        if (PlayerController.IsGamePaused) return;
+
         // --- LINKSSKLICK: BALL ---
         if (Input.GetMouseButtonDown(0))
         {

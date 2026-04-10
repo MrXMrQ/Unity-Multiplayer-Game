@@ -25,6 +25,8 @@ public class PlayerController : NetworkBehaviour
 
     [Header("UI Menü")]
     public GameObject pauseMenuPanel;
+
+    public static bool IsGamePaused = false;
     private bool isPaused = false;
 
     private NetworkVariable<Color> playerColor = new NetworkVariable<Color>(
@@ -119,6 +121,7 @@ public class PlayerController : NetworkBehaviour
     void Update()
     {
         if (!IsOwner) return;
+
         if (controller == null || !controller.enabled) return;
 
         if (Input.GetKeyDown(KeyCode.Escape)) TogglePause();
@@ -183,14 +186,28 @@ public class PlayerController : NetworkBehaviour
     public void TogglePause()
     {
         isPaused = !isPaused;
+        IsGamePaused = isPaused; // Den statischen Wert synchronisieren
+
         if (pauseMenuPanel != null) pauseMenuPanel.SetActive(isPaused);
         SetCursorState(isPaused);
     }
 
     private void SetCursorState(bool paused)
     {
-        Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = paused;
+        if (paused)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
+            // Der "Trick": Wir setzen den Fokus manuell zurück auf das Spiel,
+            // damit kein UI-Element mehr den Fokus hat.
+            UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
+        }
     }
 
     public void QuitGame()
