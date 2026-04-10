@@ -2,7 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Unity.Netcode.Transports.UTP; // Direktes Using für UTP
+using Unity.Netcode.Transports.UTP;
 
 public class MainMenuControl : MonoBehaviour
 {
@@ -13,76 +13,77 @@ public class MainMenuControl : MonoBehaviour
 
     [Header("Einstellungen")]
     public string gameSceneName = "GameScene";
+    public TMP_InputField nameInputField;
+
+    // Die statische Variable, auf die das Player-Script zugreift
+    public static string LocalPlayerName = "Player";
 
     void Awake()
     {
-        // Falls mehrere Monitore vorhanden sind
         if (Display.displays.Length > 1)
         {
-            // Display 0 ist der Hauptmonitor in Windows
             Display.displays[0].Activate();
         }
 
-        // Zwingt das Fenster auf den Primären Monitor
-        // Dies setzt die Position des Fensters zurück
         PlayerPrefs.DeleteKey("UnitySelectMonitor");
         Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, FullScreenMode.FullScreenWindow);
     }
 
+    // Speichert den Namen aus dem InputField in die statische Variable
+    public void SaveName()
+    {
+        if (nameInputField != null && !string.IsNullOrEmpty(nameInputField.text))
+        {
+            LocalPlayerName = nameInputField.text;
+            Debug.Log(LocalPlayerName);
+            Debug.Log($"Name gespeichert: {LocalPlayerName}");
+        }
+    }
+
     private void Start()
     {
-        // --- AUTOMATISCHER SERVER START (Für Ubuntu/Docker) ---
-        // Diese Prüfung muss AUSSERHALB der Button-Logik stehen
+        // --- AUTOMATISCHER SERVER START (Headless) ---
         if (UnityEngine.SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
         {
-            Debug.Log("Dedicated Server erkannt! Initialisiere Netzwerk...");
-
+            Debug.Log("Dedicated Server erkannt!");
             var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
             if (transport != null)
             {
                 transport.ConnectionData.Address = "0.0.0.0";
-                // Wir erzwingen das Erlauben von Remote-Verbindungen im Code
             }
 
             if (NetworkManager.Singleton.StartServer())
             {
-                Debug.Log("Server erfolgreich gestartet. Lade Szene...");
                 NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
-            return; // Beende Start(), da wir auf dem Server keine Buttons brauchen
+            return;
         }
 
-        // --- HOST BUTTON (Für lokales Testen) ---
+        // --- HOST BUTTON ---
         hostButton.onClick.AddListener(() =>
         {
+            SaveName(); // WICHTIG: Erst Namen sichern
             if (NetworkManager.Singleton.StartHost())
             {
-                Debug.Log("Host gestartet...");
+                Debug.Log("Host gestartet mit Name: " + LocalPlayerName);
                 NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
         });
 
-        // --- JOIN BUTTON (Für deinen Windows Client) ---
+        // --- JOIN BUTTON ---
         joinButton.onClick.AddListener(() =>
         {
+            SaveName(); // WICHTIG: Erst Namen sichern
             var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
 
             string targetIp = ipInputField.text;
-            if (string.IsNullOrEmpty(targetIp))
-            {
-                targetIp = "127.0.0.1";
-            }
+            if (string.IsNullOrEmpty(targetIp)) targetIp = "127.0.0.1";
 
             transport.ConnectionData.Address = targetIp;
-            Debug.Log("Versuche Verbindung zu: " + targetIp);
 
             if (NetworkManager.Singleton.StartClient())
             {
-                Debug.Log("Client gestartet...");
-            }
-            else
-            {
-                Debug.LogError("Client konnte nicht gestartet werden!");
+                Debug.Log("Client gestartet als: " + LocalPlayerName);
             }
         });
     }

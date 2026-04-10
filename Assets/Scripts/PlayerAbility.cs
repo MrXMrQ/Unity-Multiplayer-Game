@@ -82,9 +82,6 @@ public class PlayerAbility : NetworkBehaviour
         // Jetzt kannst du die Werte an deine CooldownBars übergeben:
         if (wallCooldownBar != null) ballCooldownBar.SetCooldown(currentBallCooldown);
         if (wallCooldownBar != null) wallCooldownBar.SetCooldown(currentWallCooldown);
-
-        // Debug Log (zeigt jetzt z.B. 3.0 -> 0.0 an)
-        Debug.Log($"Wand Cooldown: {currentWallCooldown:F1}s");
     }
 
     private void ShootBall()

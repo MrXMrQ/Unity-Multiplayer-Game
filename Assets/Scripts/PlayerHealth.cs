@@ -5,7 +5,8 @@ public class PlayerHealth : NetworkBehaviour
 {
     [Header("Health Settings")]
     public int maxHealth = 100;
-    public HealthBar healthBar;
+    public HealthBar healthBarLocal;
+    public HealthBar healthBarGlobal;
 
     // Die NetworkVariable synchronisiert den Wert automatisch für alle Clients
     public NetworkVariable<int> currentHealth = new NetworkVariable<int>(
@@ -16,10 +17,19 @@ public class PlayerHealth : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        if (IsOwner)
+        // INITIALISIERUNG
+        // Die globale Bar (über dem Kopf) initialisieren wir für JEDEN
+        if (healthBarGlobal != null)
         {
-            healthBar.SetMaxHealth(maxHealth);
-            healthBar.SetHealth(currentHealth.Value);
+            healthBarGlobal.SetMaxHealth(maxHealth);
+            healthBarGlobal.SetHealth(currentHealth.Value);
+        }
+
+        // Die lokale Bar (HUD) initialisieren wir NUR für den Besitzer
+        if (IsOwner && healthBarLocal != null)
+        {
+            healthBarLocal.SetMaxHealth(maxHealth);
+            healthBarLocal.SetHealth(currentHealth.Value);
         }
 
         if (IsServer)
@@ -27,7 +37,6 @@ public class PlayerHealth : NetworkBehaviour
             currentHealth.Value = maxHealth;
         }
 
-        // Wir abonnieren eine Funktion, die aufgerufen wird, wenn sich die Leben ändern
         currentHealth.OnValueChanged += OnHealthChanged;
     }
 
@@ -42,7 +51,8 @@ public class PlayerHealth : NetworkBehaviour
         if (currentHealth.Value <= 0)
         {
             currentHealth.Value = 100; // Leben direkt heilen
-            healthBar.SetHealth(currentHealth.Value);
+            healthBarLocal.SetHealth(currentHealth.Value);
+            healthBarGlobal.SetHealth(currentHealth.Value);
             RespawnClientRpc(); // Dem Client sagen: "Teleportier dich!"
         }
     }
@@ -69,13 +79,19 @@ public class PlayerHealth : NetworkBehaviour
 
     private void OnHealthChanged(int oldHealth, int newHealth)
     {
-        // Nur der Besitzer des Spielers soll SEINE Bar updaten sehen
-        if (IsOwner && healthBar != null)
+        // 1. GLOBAL: Diese Bar soll JEDER Spieler bei JEDEM anderen sehen
+        if (healthBarGlobal != null)
         {
-            healthBar.SetHealth(newHealth);
+            healthBarGlobal.SetHealth(newHealth);
         }
 
-        if (newHealth <= 0) Debug.Log("Tot!");
+        // 2. LOCAL: Diese Bar (dein HUD) wird nur für dich selbst aktualisiert
+        if (IsOwner && healthBarLocal != null)
+        {
+            healthBarLocal.SetHealth(newHealth);
+        }
+
+        if (newHealth <= 0) Debug.Log($"{gameObject.name} ist tot!");
     }
 
     private void Die()
