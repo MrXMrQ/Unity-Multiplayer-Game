@@ -1,0 +1,12 @@
+services:
+  unity-server:
+    build: .
+    container_name: game-server-1
+    restart: always
+    ports:
+      - "7777:7777/udp"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
