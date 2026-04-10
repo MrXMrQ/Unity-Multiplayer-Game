@@ -137,19 +137,24 @@ public class PlayerAbility : NetworkBehaviour
 
             projectile.ballColor.Value = playerColor;
 
-            // Physik-Berechnung
-            Vector3 targetVelocity = direction * throwForce;
-
-            // 1. Physik auf dem Server
+            // --- PHYSIK-OPTIMIERUNG FÜR GESCHOSSE ---
             Rigidbody rb = ball.GetComponent<Rigidbody>();
             if (rb != null)
             {
                 rb.isKinematic = false;
-                rb.linearVelocity = targetVelocity;
+                rb.useGravity = true; // Ball fliegt geradeaus ohne abzusinken
+
+                // Wichtig für hohe Geschwindigkeiten: Verhindert das Durchfliegen durch Wände
+                rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+                // Sofortige Wucht durch Impuls (berechnet Masse mit ein)
+                rb.AddForce(direction * throwForce, ForceMode.Impulse);
             }
 
-            // 2. Physik auf Clients synchronisieren
-            projectile.FireBallClientRpc(targetVelocity);
+            // 2. Physik auf Clients synchronisieren (Übergabe der berechneten Richtung/Kraft)
+            // Wir schicken den Impuls-Vektor, damit es auf Clients identisch aussieht
+            Vector3 impulseVelocity = direction * throwForce;
+            projectile.FireBallClientRpc(impulseVelocity);
 
             Destroy(ball, 5f);
         }

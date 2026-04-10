@@ -1656,7 +1656,7 @@ MonoBehaviour:
   wallCooldown: 3
   ballCooldownBar: {fileID: 2908107029579325470}
   wallCooldownBar: {fileID: 1362066738760267726}
-  throwForce: 20
+  throwForce: 47
   wallDistance: 3
   wallDuration: 5
   playerHUD: {fileID: 310312964069286433}
