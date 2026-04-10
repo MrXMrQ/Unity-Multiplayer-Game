@@ -39,22 +39,38 @@ public class PlayerController : NetworkBehaviour
 
         if (IsOwner)
         {
+            // --- ICH BIN DER LOKALE SPIELER ---
             playerCamera.enabled = true;
             if (playerCamera.GetComponent<AudioListener>())
                 playerCamera.GetComponent<AudioListener>().enabled = true;
 
-            // Initialen Status setzen
+            // UI initialisieren
             isPaused = false;
-            if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+            if (pauseMenuPanel != null)
+            {
+                pauseMenuPanel.SetActive(false); // Sichergehen, dass es aus ist
+            }
 
             SetCursorState(false);
             StartCoroutine(DelayedSpawn());
         }
         else
         {
+            // --- DAS IST EIN ANDERER SPIELER (Remote Client) ---
             playerCamera.enabled = false;
             if (playerCamera.GetComponent<AudioListener>())
                 playerCamera.GetComponent<AudioListener>().enabled = false;
+
+            // WICHTIG: UI für andere komplett deaktivieren oder löschen
+            if (pauseMenuPanel != null)
+            {
+                // Wir schalten das Panel aus, damit wir das Menü von Spieler 2 nicht sehen
+                pauseMenuPanel.SetActive(false);
+
+                // Optional: Wenn das UI auf einem eigenen Canvas liegt, 
+                // kannst du sogar das ganze Canvas-Objekt für Fremde löschen:
+                // Destroy(pauseMenuPanel.transform.root.gameObject); 
+            }
         }
 
         ApplyColor(playerColor.Value);
