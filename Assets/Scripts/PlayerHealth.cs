@@ -16,10 +16,15 @@ public class PlayerHealth : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        if (IsOwner)
+        {
+            healthBar.SetMaxHealth(maxHealth);
+            healthBar.SetHealth(currentHealth.Value);
+        }
+
         if (IsServer)
         {
             currentHealth.Value = maxHealth;
-            healthBar.SetMaxHealth(maxHealth);
         }
 
         // Wir abonnieren eine Funktion, die aufgerufen wird, wenn sich die Leben ändern
@@ -33,7 +38,6 @@ public class PlayerHealth : NetworkBehaviour
         if (!IsServer) return;
 
         currentHealth.Value -= damage;
-        healthBar.SetHealth(currentHealth.Value);
 
         if (currentHealth.Value <= 0)
         {
@@ -65,14 +69,13 @@ public class PlayerHealth : NetworkBehaviour
 
     private void OnHealthChanged(int oldHealth, int newHealth)
     {
-        // Debug für den Client, damit du siehst, was ankommt
-        Debug.Log($"Client Check - Altes Leben: {oldHealth}, Neues Leben: {newHealth}");
-
-        if (newHealth <= 0)
+        // Nur der Besitzer des Spielers soll SEINE Bar updaten sehen
+        if (IsOwner && healthBar != null)
         {
-            // Visuelles Feedback oder Sound hier abspielen
-            Debug.Log("Ich bin tot!");
+            healthBar.SetHealth(newHealth);
         }
+
+        if (newHealth <= 0) Debug.Log("Tot!");
     }
 
     private void Die()

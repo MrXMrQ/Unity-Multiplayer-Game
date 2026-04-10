@@ -26,6 +26,29 @@ public class PlayerAbility : NetworkBehaviour
     private Dictionary<ulong, float> lastServerBallTime = new Dictionary<ulong, float>();
     private Dictionary<ulong, float> lastServerWallTime = new Dictionary<ulong, float>();
 
+    [Header("UI Setup")]
+    public GameObject playerHUD; // Ziehe hier das Parent-Objekt (PlayerHUD_Canvas) rein
+
+    public override void OnNetworkSpawn()
+    {
+        if (IsOwner)
+        {
+            // NUR für mich: HUD aktivieren und Werte setzen
+            if (playerHUD != null) playerHUD.SetActive(true);
+
+            if (ballCooldownBar != null) ballCooldownBar.SetMaxCoolDown(ballCooldown);
+            if (wallCooldownBar != null) wallCooldownBar.SetMaxCoolDown(wallCooldown);
+        }
+        else
+        {
+            // FÜR ALLE ANDEREN: HUD komplett unsichtbar machen
+            if (playerHUD != null) playerHUD.SetActive(false);
+
+            // Dieses Script auf fremden Playern deaktivieren, damit es keine UI-Werte sendet
+            this.enabled = false;
+        }
+    }
+
     void Start()
     {
         playerController = GetComponent<PlayerController>();
@@ -141,29 +164,25 @@ public class PlayerAbility : NetworkBehaviour
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
 
-        // Sicherheits-Check: Falls der Client noch nicht im Dictionary ist
         if (!lastServerWallTime.ContainsKey(clientId)) lastServerWallTime[clientId] = 0f;
 
-        // Prüfung gegen die Netzwerk-Zeit des Servers
         if (NetworkManager.Singleton.ServerTime.Time >= lastServerWallTime[clientId])
         {
-            // Cooldown für diesen Client auf dem Server setzen
             lastServerWallTime[clientId] = (float)NetworkManager.Singleton.ServerTime.Time + wallCooldown;
 
             // --- Wand Instanziieren ---
             GameObject wall = Instantiate(wallPrefab, pos, rot);
 
-            // Farbe setzen (Sollte idealerweise über NetworkVariable oder MaterialPropertyBlock laufen, 
-            // aber für den Moment setzen wir es direkt)
-            wall.GetComponent<MeshRenderer>().material.color = playerColor;
-
+            // WICHTIG: Erst spawnen, dann Variable setzen
             wall.GetComponent<NetworkObject>().Spawn();
 
+            // Hier greifen wir auf das neue WallScript zu
+            if (wall.TryGetComponent<WallScript>(out var wallScript))
+            {
+                wallScript.wallColor.Value = playerColor;
+            }
+
             Destroy(wall, wallDuration);
-        }
-        else
-        {
-            Debug.LogWarning($"Server: Wand-Spam geblockt für Client {clientId}");
         }
     }
 }
