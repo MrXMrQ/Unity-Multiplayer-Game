@@ -182,6 +182,7 @@ public class PlayerAbility : NetworkBehaviour
             if (wall.TryGetComponent<WallScript>(out var wallScript))
             {
                 wallScript.wallColor.Value = playerColor;
+                wallScript.SpawnPlaceEffectClientRpc(pos, Vector3.up, wallScript.wallColor.Value);
             }
 
             Destroy(wall, wallDuration);

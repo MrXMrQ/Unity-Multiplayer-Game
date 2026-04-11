@@ -148,6 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  hitParticlePrefab: {fileID: 8091643624672320508, guid: e9ed5400a07ad9e49b78a25b2f71327d, type: 3}
   wallColor:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
