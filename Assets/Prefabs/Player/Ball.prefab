@@ -155,6 +155,7 @@ MonoBehaviour:
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: {r: 1, g: 1, b: 1, a: 1}
   shooterId: 0
+  hitParticlePrefab: {fileID: 3027722601447088332, guid: b4fa8d5346a6342419f41bb7135e6a05, type: 3}
 --- !u!54 &2169918919434408236
 Rigidbody:
   m_ObjectHideFlags: 0
