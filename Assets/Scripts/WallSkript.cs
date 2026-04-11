@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class WallScript : NetworkBehaviour
 {
-    // Die NetworkVariable synchronisiert die Farbe für alle (auch Nachzügler)
+    public GameObject hitParticlePrefab;
+
     public NetworkVariable<Color> wallColor = new NetworkVariable<Color>(
         Color.white,
         NetworkVariableReadPermission.Everyone,
@@ -12,7 +13,6 @@ public class WallScript : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // Wenn die Variable sich ändert oder das Objekt spawnt, Farbe setzen
         ApplyColor(wallColor.Value);
         wallColor.OnValueChanged += (oldVal, newVal) => ApplyColor(newVal);
     }
@@ -20,9 +20,27 @@ public class WallScript : NetworkBehaviour
     private void ApplyColor(Color color)
     {
         MeshRenderer renderer = GetComponent<MeshRenderer>();
-        if (renderer != null)
+        if (renderer != null) renderer.material.color = color;
+    }
+
+    // ÄNDERUNG: Wir übergeben die Farbe direkt als Parameter an den RPC
+    [ClientRpc]
+    public void SpawnPlaceEffectClientRpc(Vector3 pos, Vector3 normal, Color effectColor)
+    {
+        if (hitParticlePrefab != null)
         {
-            renderer.material.color = color;
+            GameObject effect = Instantiate(hitParticlePrefab, pos, Quaternion.LookRotation(normal));
+
+            ParticleSystem[] children = effect.GetComponentsInChildren<ParticleSystem>();
+            foreach (var ps in children)
+            {
+                var main = ps.main;
+                // Wir nutzen hier den Parameter "effectColor", NICHT die NetworkVariable
+                main.startColor = effectColor;
+                ps.Play();
+            }
+
+            Destroy(effect, 2f);
         }
     }
 }
