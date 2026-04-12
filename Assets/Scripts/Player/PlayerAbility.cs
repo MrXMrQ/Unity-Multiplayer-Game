@@ -60,24 +60,6 @@ public class PlayerAbility : NetworkBehaviour
                 );
             }
         }
-
-        // first ability
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            Debug.Log("First ability");
-        }
-
-        // second ability
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            Debug.Log("second ability");
-        }
-
-        // third ability
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            Debug.Log("ultimate ability");
-        }
     }
 
     private Vector3 GetTargetPoint()
