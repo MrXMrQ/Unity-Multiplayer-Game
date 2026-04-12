@@ -7,8 +7,9 @@ public class PlayerAbility : NetworkBehaviour
     [Header("Settings")]
     public float shootRange = 100f;
     public int damageValue = 20;
-    public float fireRate = 0.4f;
-    private float nextFireTime = 0f;
+    public float fireRate = 10f; // shoots per seconds
+    public float tracerSpeed = 200f;
+    private float lastShootTime = 0f;
 
     [Header("Visuals")]
     public GameObject hitEffectPrefab;
@@ -44,12 +45,22 @@ public class PlayerAbility : NetworkBehaviour
         if (!IsOwner || PlayerController.IsGamePaused) return;
 
         // shoot
-        if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
+        if (Input.GetMouseButton(0))
         {
-            nextFireTime = Time.time + fireRate;
+            Debug.Log(Time.time);
+            Debug.Log(lastShootTime + 1f / fireRate);
+            if (Time.time >= lastShootTime + 1f / fireRate)
+            {
+                lastShootTime = Time.time;
 
-            SpawnTracer(GetTargetPoint());
-            RequestShootServerRpc();
+                Vector3 target = GetTargetPoint();
+                SpawnTracer(target);
+
+                RequestShootServerRpc(
+                    playerController.playerCamera.transform.position,
+                    playerController.playerCamera.transform.forward
+                );
+            }
         }
 
         // first ability
@@ -65,7 +76,7 @@ public class PlayerAbility : NetworkBehaviour
         }
 
         // third ability
-        if (Input.GetKeyDown(KeyCode.Q))
+        if (Input.GetKeyDown(KeyCode.R))
         {
             Debug.Log("ultimate ability");
         }
@@ -85,17 +96,23 @@ public class PlayerAbility : NetworkBehaviour
     {
         if (tracerPrefab != null && shootPoint != null)
         {
-            GameObject tracer = Instantiate(tracerPrefab, shootPoint.position, Quaternion.identity);
+            Vector3 direction = (targetPoint - shootPoint.position).normalized;
+
+            Quaternion lookRotation = Quaternion.LookRotation(direction);
+            Quaternion rotationCorrection = Quaternion.Euler(90, 0, 0);
+            Quaternion finalRotation = lookRotation * rotationCorrection;
+
+            GameObject tracer = Instantiate(tracerPrefab, shootPoint.position, finalRotation);
+
             StartCoroutine(MoveTracer(tracer, targetPoint));
         }
     }
 
     private IEnumerator MoveTracer(GameObject tracer, Vector3 target)
     {
-        float speed = 200f; // Sehr hohe Geschwindigkeit für den Tracer-Effekt
         Vector3 startPos = tracer.transform.position;
         float distance = Vector3.Distance(startPos, target);
-        float travelTime = distance / speed;
+        float travelTime = distance / tracerSpeed;
         float elapsed = 0;
 
         while (elapsed < travelTime)
@@ -110,12 +127,14 @@ public class PlayerAbility : NetworkBehaviour
     }
 
     [ServerRpc]
-    void RequestShootServerRpc(ServerRpcParams rpcParams = default)
+    void RequestShootServerRpc(Vector3 camPos, Vector3 camForward, ServerRpcParams rpcParams = default)
     {
-        Ray ray = new Ray(playerController.playerCamera.transform.position, playerController.playerCamera.transform.forward);
+        Ray ray = new Ray(camPos, camForward);
 
         if (showDebugRay)
+        {
             Debug.DrawRay(ray.origin, ray.direction * shootRange, Color.red, debugRayDuration);
+        }
 
         if (Physics.Raycast(ray, out RaycastHit hit, shootRange))
         {
@@ -124,11 +143,12 @@ public class PlayerAbility : NetworkBehaviour
                 health.TakeDamage(damageValue);
             }
 
-            // Hit Effect für alle (Einschlag)
             SpawnHitEffectClientRpc(hit.point, hit.normal);
-
-            // Tracer für alle anderen Spieler (damit sie sehen, wer schießt)
             SpawnTracerClientRpc(hit.point, rpcParams.Receive.SenderClientId);
+        }
+        else
+        {
+            SpawnTracerClientRpc(ray.GetPoint(shootRange), rpcParams.Receive.SenderClientId);
         }
     }
 
@@ -144,7 +164,6 @@ public class PlayerAbility : NetworkBehaviour
     [ClientRpc]
     void SpawnTracerClientRpc(Vector3 targetPoint, ulong shooterId)
     {
-        // Der Schütze hat seinen Tracer bereits lokal gespawnt (für 0 Latenz)
         if (NetworkManager.Singleton.LocalClientId != shooterId)
         {
             SpawnTracer(targetPoint);
