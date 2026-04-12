@@ -381,15 +381,15 @@ MonoBehaviour:
   slider: {fileID: 8023387770766564462}
   gradient:
     serializedVersion: 2
-    key0: {r: 1, g: 0.23137255, b: 0.1882353, a: 1}
+    key0: {r: 1, g: 0.10137627, b: 0.050943315, a: 1}
     key1: {r: 1, g: 0.8, b: 0, a: 1}
-    key2: {r: 1, g: 0.86952853, b: 0, a: 0}
+    key2: {r: 0, g: 0.7207546, b: 0.18197271, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}
     key6: {r: 0, g: 0, b: 0, a: 0}
     key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 21843
+    ctime0: 21845
     ctime1: 43686
     ctime2: 65535
     ctime3: 0
@@ -1852,9 +1852,6 @@ MonoBehaviour:
   debugRayColor: {r: 0, g: 1, b: 0, a: 1}
   debugRayDuration: 0.5
   playerHUD: {fileID: 310312964069286433}
-  hitLayers:
-    serializedVersion: 2
-    m_Bits: 0
 --- !u!114 &6320826573314017986
 MonoBehaviour:
   m_ObjectHideFlags: 0
