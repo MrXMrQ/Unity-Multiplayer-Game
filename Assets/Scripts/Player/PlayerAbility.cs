@@ -109,6 +109,7 @@ public class PlayerAbility : NetworkBehaviour
     [ServerRpc]
     void RequestShootServerRpc(Vector3 camPos, Vector3 camForward, ServerRpcParams rpcParams = default)
     {
+        ulong shooterId = rpcParams.Receive.SenderClientId;
         Ray ray = new Ray(camPos, camForward);
 
         if (showDebugRay)
@@ -120,15 +121,22 @@ public class PlayerAbility : NetworkBehaviour
         {
             if (hit.collider.TryGetComponent<PlayerHealth>(out var health))
             {
-                health.TakeDamage(damageValue);
+                if (health.OwnerClientId != shooterId)
+                {
+                    health.TakeDamage(damageValue);
+                }
+                else
+                {
+                    return;
+                }
             }
 
             SpawnHitEffectClientRpc(hit.point, hit.normal);
-            SpawnTracerClientRpc(hit.point, rpcParams.Receive.SenderClientId);
+            SpawnTracerClientRpc(hit.point, shooterId);
         }
         else
         {
-            SpawnTracerClientRpc(ray.GetPoint(shootRange), rpcParams.Receive.SenderClientId);
+            SpawnTracerClientRpc(ray.GetPoint(shootRange), shooterId);
         }
     }
 
