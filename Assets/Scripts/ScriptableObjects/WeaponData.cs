@@ -9,7 +9,7 @@ public class WeaponData : ScriptableObject
     public float fireRate;
     public float tracerSpeed;
     public float reloadSpeed;
-    public int shootRange;
+    public float shootRange; // float ist besser für Entfernungen
     public GameObject weaponPrefab;
     public GameObject tracerPrefab;
     public GameObject hitEffectPrefab;

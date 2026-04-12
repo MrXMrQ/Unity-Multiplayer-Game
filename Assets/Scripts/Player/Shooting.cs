@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections;
+using TMPro;
 
 public class Shooting : NetworkBehaviour
 {
@@ -19,6 +20,9 @@ public class Shooting : NetworkBehaviour
     [Header("Player HUD")]
     public GameObject playerHUD;
     private PlayerController playerController;
+    public TextMeshProUGUI currentAmmoText;
+    public TextMeshProUGUI magazineSizeText;
+    public Bar reloadCooldown;
 
     public override void OnNetworkSpawn()
     {
@@ -27,16 +31,13 @@ public class Shooting : NetworkBehaviour
         if (activeWeapon != null && weaponSpawnPoint != null)
         {
             currentAmmo = activeWeapon.magazineSize;
+            currentAmmoText.text = $"{currentAmmo}";
+            magazineSizeText.text = $"{activeWeapon.magazineSize}";
 
             GameObject spawnedWeapon = Instantiate(activeWeapon.weaponPrefab, weaponSpawnPoint);
 
             spawnedWeapon.transform.localPosition = Vector3.zero;
             spawnedWeapon.transform.localRotation = Quaternion.identity;
-
-            if (IsOwner)
-            {
-                SetLayerRecursively(spawnedWeapon, LayerMask.NameToLayer("Viewmodel"));
-            }
 
             shootPoint = spawnedWeapon.transform.Find("shootPoint");
         }
@@ -49,6 +50,12 @@ public class Shooting : NetworkBehaviour
         {
             if (playerHUD != null) playerHUD.SetActive(false);
             this.enabled = false;
+        }
+
+        if (IsOwner && reloadCooldown != null)
+        {
+            reloadCooldown.SetMaxValue(100);
+            reloadCooldown.SetValue(0);
         }
     }
 
@@ -79,8 +86,7 @@ public class Shooting : NetworkBehaviour
     {
         lastShootTime = Time.time;
         currentAmmo--;
-
-        Debug.Log($"Schuss! Munition: {currentAmmo}/{activeWeapon.magazineSize}");
+        currentAmmoText.text = $"{currentAmmo}";
 
         Vector3 target = GetTargetPoint();
         SpawnTracer(target);
@@ -95,10 +101,32 @@ public class Shooting : NetworkBehaviour
     {
         isReloading = true;
 
-        yield return new WaitForSeconds(activeWeapon.reloadSpeed);
+        float duration = activeWeapon.reloadSpeed;
+        float elapsed = 0f;
 
+        if (reloadCooldown != null) reloadCooldown.SetValue(0);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+
+            if (reloadCooldown != null)
+            {
+                float progress = elapsed / duration * 100f;
+                reloadCooldown.SetValue((int)progress);
+            }
+
+            yield return null;
+        }
+
+        // Werte finalisieren
         currentAmmo = activeWeapon.magazineSize;
+        currentAmmoText.text = $"{currentAmmo}";
+
+        if (reloadCooldown != null) reloadCooldown.SetValue(100);
+
         isReloading = false;
+        reloadCooldown.SetValue(0);
     }
 
     private Vector3 GetTargetPoint()
@@ -139,15 +167,6 @@ public class Shooting : NetworkBehaviour
             yield return null;
         }
         Destroy(tracer);
-    }
-
-    private void SetLayerRecursively(GameObject obj, int newLayer)
-    {
-        obj.layer = newLayer;
-        foreach (Transform child in obj.transform)
-        {
-            SetLayerRecursively(child.gameObject, newLayer);
-        }
     }
 
     [ServerRpc]
