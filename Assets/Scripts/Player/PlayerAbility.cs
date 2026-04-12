@@ -47,8 +47,6 @@ public class PlayerAbility : NetworkBehaviour
         // shoot
         if (Input.GetMouseButton(0))
         {
-            Debug.Log(Time.time);
-            Debug.Log(lastShootTime + 1f / fireRate);
             if (Time.time >= lastShootTime + 1f / fireRate)
             {
                 lastShootTime = Time.time;
@@ -157,7 +155,8 @@ public class PlayerAbility : NetworkBehaviour
     {
         if (hitEffectPrefab != null)
         {
-            Instantiate(hitEffectPrefab, point, Quaternion.LookRotation(normal));
+            GameObject effect = Instantiate(hitEffectPrefab, point, Quaternion.LookRotation(normal));
+            Destroy(effect, 2f);
         }
     }
 
