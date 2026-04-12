@@ -91,28 +91,7 @@ public class PlayerHealth : NetworkBehaviour
             healthBarLocal.SetHealth(newHealth);
         }
 
-        if (newHealth <= 0) Debug.Log($"{gameObject.name} ist tot!");
-    }
-
-    private void Die()
-    {
-        if (!IsServer) return;
-
-        Debug.Log($"Server: Spieler {OwnerClientId} wird respawnt.");
-
-        // 1. CharacterController kurz ausschalten (WICHTIG für Teleport)
-        var controller = GetComponent<CharacterController>();
-        if (controller != null) controller.enabled = false;
-
-        // 2. Position setzen
-        transform.position = FixedSpawnPoint.Pos;
-        transform.rotation = FixedSpawnPoint.Rot;
-
-        // 3. Leben erst NACH dem Teleport zurücksetzen
-        currentHealth.Value = maxHealth;
-
-        // 4. Controller wieder an (ein Frame später wäre ideal, aber meist reicht das hier)
-        if (controller != null) controller.enabled = true;
+        if (newHealth <= 0) Debug.Log($"{gameObject.name} is dead!");
     }
 
     public override void OnNetworkDespawn()
