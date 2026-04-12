@@ -1655,6 +1655,7 @@ GameObject:
   - component: {fileID: 6320826573314017986}
   - component: {fileID: 7568829971892735854}
   - component: {fileID: 6649933590631239428}
+  - component: {fileID: 3489496599121950559}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1851,6 +1852,9 @@ MonoBehaviour:
   debugRayColor: {r: 0, g: 1, b: 0, a: 1}
   debugRayDuration: 0.5
   playerHUD: {fileID: 310312964069286433}
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!114 &6320826573314017986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1910,6 +1914,29 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!136 &3489496599121950559
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7815849164461968766}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.61
+  m_Height: 2.3
+  m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7981804382989492292
 GameObject:
