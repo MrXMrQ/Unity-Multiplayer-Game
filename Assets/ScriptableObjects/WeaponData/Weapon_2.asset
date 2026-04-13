@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e615db143c958e4d9657ed9a499882f, type: 3}
   m_Name: Weapon_2
   m_EditorClassIdentifier: 
-  weaponName: Weapon_2
+  weaponName: Sniper
   damage: 50
   magazineSize: 5
   fireRate: 0.5

@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e615db143c958e4d9657ed9a499882f, type: 3}
   m_Name: Weapon_1
   m_EditorClassIdentifier: 
-  weaponName: Weapon_1
-  damage: 20
-  magazineSize: 60
-  fireRate: 10
+  weaponName: Classic
+  damage: 10
+  magazineSize: 7
+  fireRate: 2
   tracerSpeed: 200
-  reloadSpeed: 3
+  reloadSpeed: 0.5
   shootRange: 200
   weaponPrefab: {fileID: 5243365969649484445, guid: b9de1e7a209f931418e5495384f0e8cd, type: 3}
   tracerPrefab: {fileID: 5505571293253455506, guid: affcb90b02bb60c4da94cff045461be6, type: 3}

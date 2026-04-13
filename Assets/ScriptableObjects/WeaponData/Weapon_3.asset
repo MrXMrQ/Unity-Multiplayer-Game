@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e615db143c958e4d9657ed9a499882f, type: 3}
   m_Name: Weapon_3
   m_EditorClassIdentifier: 
-  weaponName: Weapon_2
-  damage: 50
-  magazineSize: 5
-  fireRate: 0.5
+  weaponName: MP
+  damage: 1
+  magazineSize: 50
+  fireRate: 50
   tracerSpeed: 200
-  reloadSpeed: 10
+  reloadSpeed: 5
   shootRange: 100
-  weaponPrefab: {fileID: 5243365969649484445, guid: 7678ca7944a19b643bb27198f542af10, type: 3}
+  weaponPrefab: {fileID: 5243365969649484445, guid: dcd088d57adfd7f479f2712faa8f5410, type: 3}
   tracerPrefab: {fileID: 5505571293253455506, guid: affcb90b02bb60c4da94cff045461be6, type: 3}
   hitEffectPrefab: {fileID: 3027722601447088332, guid: b4fa8d5346a6342419f41bb7135e6a05, type: 3}

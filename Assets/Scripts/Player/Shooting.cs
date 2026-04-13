@@ -6,7 +6,6 @@ using TMPro;
 public class Shooting : NetworkBehaviour
 {
     [Header("Settings")]
-    public WeaponData activeWeapon;
     public Transform weaponSpawnPoint;
     private float lastShootTime = 0f;
     private int currentAmmo;
@@ -24,38 +23,39 @@ public class Shooting : NetworkBehaviour
     public TextMeshProUGUI magazineSizeText;
     public Bar reloadCooldown;
 
+    [Header("Catalog")]
+    public WeaponCatalog catalog;
+    private NetworkVariable<int> activeWeaponIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private WeaponData activeWeapon;
+    private GameObject currentWeaponInstance;
+
     public override void OnNetworkSpawn()
     {
         playerController = GetComponent<PlayerController>();
 
-        if (activeWeapon != null && weaponSpawnPoint != null)
+        // Event abonnieren: Wenn sich der Index ändert, wird das Modell bei ALLEN aktualisiert
+        activeWeaponIndex.OnValueChanged += (oldIdx, newIdx) =>
         {
-            currentAmmo = activeWeapon.magazineSize;
-            currentAmmoText.text = $"{currentAmmo}";
-            magazineSizeText.text = $"{activeWeapon.magazineSize}";
+            EquipWeapon(newIdx);
+        };
 
-            GameObject spawnedWeapon = Instantiate(activeWeapon.weaponPrefab, weaponSpawnPoint);
-
-            spawnedWeapon.transform.localPosition = Vector3.zero;
-            spawnedWeapon.transform.localRotation = Quaternion.identity;
-
-            shootPoint = spawnedWeapon.transform.Find("shootPoint");
-        }
+        // Initiale Waffe laden (für den Start)
+        EquipWeapon(activeWeaponIndex.Value);
 
         if (IsOwner)
         {
             if (playerHUD != null) playerHUD.SetActive(true);
+
+            if (reloadCooldown != null)
+            {
+                reloadCooldown.SetMaxValue(100);
+                reloadCooldown.SetValue(0);
+            }
         }
         else
         {
             if (playerHUD != null) playerHUD.SetActive(false);
             this.enabled = false;
-        }
-
-        if (IsOwner && reloadCooldown != null)
-        {
-            reloadCooldown.SetMaxValue(100);
-            reloadCooldown.SetValue(0);
         }
     }
 
@@ -64,13 +64,13 @@ public class Shooting : NetworkBehaviour
         if (!IsOwner || PlayerController.IsGamePaused) return;
 
         // reload
-        if (Input.GetKeyDown(KeyCode.R) && currentAmmo < activeWeapon.magazineSize && !isReloading)
+        if (Input.GetKeyDown(KeyCode.R) && activeWeapon != null && currentAmmo < activeWeapon.magazineSize && !isReloading)
         {
             StartCoroutine(Reload());
         }
 
         // shoot
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButton(0) && activeWeapon != null)
         {
             if (Time.time >= lastShootTime + 1f / activeWeapon.fireRate && !isReloading)
             {
@@ -119,14 +119,15 @@ public class Shooting : NetworkBehaviour
             yield return null;
         }
 
-        // Werte finalisieren
         currentAmmo = activeWeapon.magazineSize;
         currentAmmoText.text = $"{currentAmmo}";
 
         if (reloadCooldown != null) reloadCooldown.SetValue(100);
 
         isReloading = false;
-        reloadCooldown.SetValue(0);
+        // Kurze Verzögerung bevor der Balken verschwindet
+        yield return new WaitForSeconds(0.2f);
+        if (!isReloading && reloadCooldown != null) reloadCooldown.SetValue(0);
     }
 
     private Vector3 GetTargetPoint()
@@ -142,7 +143,7 @@ public class Shooting : NetworkBehaviour
 
     private void SpawnTracer(Vector3 targetPoint)
     {
-        if (activeWeapon.tracerPrefab != null && shootPoint != null)
+        if (activeWeapon != null && activeWeapon.tracerPrefab != null && shootPoint != null)
         {
             Vector3 direction = (targetPoint - shootPoint.position).normalized;
             Quaternion finalRotation = Quaternion.LookRotation(direction) * Quaternion.Euler(90, 0, 0);
@@ -169,11 +170,61 @@ public class Shooting : NetworkBehaviour
         Destroy(tracer);
     }
 
+    private void EquipWeapon(int index)
+    {
+        if (catalog == null || index < 0 || index >= catalog.allWeapons.Count) return;
+
+        activeWeapon = catalog.allWeapons[index];
+
+        // Altes Modell löschen
+        if (currentWeaponInstance != null) Destroy(currentWeaponInstance);
+
+        // Neues Modell spawnen
+        if (activeWeapon.weaponPrefab != null && weaponSpawnPoint != null)
+        {
+            currentWeaponInstance = Instantiate(activeWeapon.weaponPrefab, weaponSpawnPoint);
+            currentWeaponInstance.transform.localPosition = Vector3.zero;
+            currentWeaponInstance.transform.localRotation = Quaternion.identity;
+
+            // Suche den Shootpoint im neuen Modell
+            shootPoint = currentWeaponInstance.transform.Find("shootPoint");
+            if (shootPoint == null) Debug.LogWarning($"Kein 'shootPoint' im Prefab von {activeWeapon.weaponName} gefunden!");
+        }
+
+        // Munition und UI zurücksetzen
+        currentAmmo = activeWeapon.magazineSize;
+        if (IsOwner)
+        {
+            if (currentAmmoText != null) currentAmmoText.text = $"{currentAmmo}";
+            if (magazineSizeText != null) magazineSizeText.text = $"{activeWeapon.magazineSize}";
+            isReloading = false;
+            StopAllCoroutines(); // Laufende Reloads abbrechen
+            if (reloadCooldown != null) reloadCooldown.SetValue(0);
+        }
+    }
+
+    // Wird vom ShopPanel aufgerufen
+    public void ChangeWeapon(WeaponData newWeaponData)
+    {
+        if (!IsOwner) return;
+
+        int index = catalog.allWeapons.IndexOf(newWeaponData);
+        if (index != -1)
+        {
+            activeWeaponIndex.Value = index;
+        }
+        else
+        {
+            Debug.LogError("Waffe nicht im Katalog gefunden!");
+        }
+    }
+
     [ServerRpc]
     void RequestShootServerRpc(Vector3 camPos, Vector3 camForward, ServerRpcParams rpcParams = default)
     {
         ulong shooterId = rpcParams.Receive.SenderClientId;
 
+        // Wir nutzen hier die activeWeapon des Servers (durch den synchronisierten Index)
         Ray ray = new Ray(camPos + (camForward * 0.5f), camForward);
 
         if (showDebugRay)
@@ -204,7 +255,7 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     void SpawnHitEffectClientRpc(Vector3 point, Vector3 normal)
     {
-        if (activeWeapon.hitEffectPrefab != null)
+        if (activeWeapon != null && activeWeapon.hitEffectPrefab != null)
         {
             GameObject effect = Instantiate(activeWeapon.hitEffectPrefab, point, Quaternion.LookRotation(normal));
             Destroy(effect, 2f);

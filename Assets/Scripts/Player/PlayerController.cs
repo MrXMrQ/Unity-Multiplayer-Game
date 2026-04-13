@@ -27,7 +27,7 @@ public class PlayerController : NetworkBehaviour
     public GameObject pauseMenuPanel;
 
     public static bool IsGamePaused = false;
-    private bool isPaused = false;
+    public bool isPaused = false;
 
     private NetworkVariable<Color> playerColor = new NetworkVariable<Color>(
         Color.white,
