@@ -854,7 +854,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0.19}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6917439768755211236
@@ -1310,7 +1310,7 @@ GameObject:
   - component: {fileID: 8023387770766564462}
   - component: {fileID: 3720898190329172744}
   m_Layer: 5
-  m_Name: Healthbar
+  m_Name: HealthbarLocal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3221,7 +3221,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0.88}
+  m_AnchoredPosition: {x: 0, y: -0.53}
   m_SizeDelta: {x: 4, y: 0.25}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &6028416613936560890
@@ -3894,9 +3894,9 @@ GameObject:
   - component: {fileID: 7100790716384692607}
   - component: {fileID: 9062243727306204942}
   - component: {fileID: 2635876107972846037}
-  - component: {fileID: 2619530130615898335}
   - component: {fileID: 6320826573314017986}
   - component: {fileID: 7568829971892735854}
+  - component: {fileID: 2619530130615898335}
   - component: {fileID: 6649933590631239428}
   - component: {fileID: 3489496599121950559}
   m_Layer: 0
@@ -4084,7 +4084,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   shopContent: {fileID: 6043213233331548331}
   playerHUD: {fileID: 310312964069286433}
-  playerController: {fileID: 2619530130615898335}
 --- !u!114 &2635876107972846037
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4099,27 +4098,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   pauseMenuPanel: {fileID: 7500905593757191099}
---- !u!114 &2619530130615898335
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7815849164461968766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 87ac9026ac0395c40b2c3a403f806ae4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  moveSpeed: 5
-  sprintMultiplier: 2
-  lookSpeed: 2
-  jumpForce: 5
-  gravity: 9.81
-  playerCamera: {fileID: 7894143043517255009}
-  firstPersonOffset: {x: 0, y: 0.6, z: 0}
-  thirdPersonOffset: {x: 0, y: 2, z: -4}
 --- !u!114 &6320826573314017986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4134,6 +4112,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   maxHealth: 100
+  spawnPoint: {x: 0, y: 10, z: 0}
   healthBarLocal: {fileID: 3720898190329172744}
   healthBarGlobal: {fileID: 6334877739066174554}
   currentHealth:
@@ -4155,6 +4134,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   nameTagText: {fileID: 827337849836048795}
+--- !u!114 &2619530130615898335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7815849164461968766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87ac9026ac0395c40b2c3a403f806ae4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  moveSpeed: 5
+  sprintMultiplier: 2
+  lookSpeed: 2
+  jumpForce: 5
+  gravity: 9.81
+  playerCamera: {fileID: 7894143043517255009}
+  firstPersonOffset: {x: 0, y: 0.6, z: 0}
+  thirdPersonOffset: {x: 0, y: 2, z: -4}
 --- !u!143 &6649933590631239428
 CharacterController:
   m_ObjectHideFlags: 0

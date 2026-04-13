@@ -3,34 +3,26 @@ using UnityEngine;
 
 public class PlayerHealth : NetworkBehaviour
 {
-    [Header("Health Settings")]
-    public int maxHealth = 100;
-    public Bar healthBarLocal;
-    public Bar healthBarGlobal;
+    [Header("Settings")]
+    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private Vector3 spawnPoint = new Vector3(0, 10, 0);
 
-    // Die NetworkVariable synchronisiert den Wert automatisch für alle Clients
+    [Header("UI References")]
+    [SerializeField] private Bar healthBarLocal;
+    [SerializeField] private Bar healthBarGlobal;
+
     public NetworkVariable<int> currentHealth = new NetworkVariable<int>(
         100,
         NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server // Nur der Server darf Leben abziehen
+        NetworkVariableWritePermission.Server
     );
 
+    /// <summary>
+    /// Initializes UI and subscribes to health change events when the network object spawns.
+    /// </summary>
     public override void OnNetworkSpawn()
     {
-        // INITIALISIERUNG
-        // Die globale Bar (über dem Kopf) initialisieren wir für JEDEN
-        if (healthBarGlobal != null)
-        {
-            healthBarGlobal.SetMaxValue(maxHealth);
-            healthBarGlobal.SetValue(currentHealth.Value);
-        }
-
-        // Die lokale Bar (HUD) initialisieren wir NUR für den Besitzer
-        if (IsOwner && healthBarLocal != null)
-        {
-            healthBarLocal.SetMaxValue(maxHealth);
-            healthBarLocal.SetValue(currentHealth.Value);
-        }
+        UpdateVisuals(currentHealth.Value);
 
         if (IsServer)
         {
@@ -40,62 +32,80 @@ public class PlayerHealth : NetworkBehaviour
         currentHealth.OnValueChanged += OnHealthChanged;
     }
 
-    // Diese Funktion wird vom Ball-Skript auf dem Server aufgerufen
-    // Auf dem Server gerufen
+    /// <summary>
+    /// Unsubscribes from health change events when the network object despawns.
+    /// </summary>
+    public override void OnNetworkDespawn()
+    {
+        currentHealth.OnValueChanged -= OnHealthChanged;
+    }
+
+    /// <summary>
+    /// Reduces health on the server and triggers respawn logic if health drops to zero.
+    /// </summary>
+    /// <param name="damage">The amount of damage to apply.</param>
     public void TakeDamage(int damage)
     {
         if (!IsServer) return;
 
-        currentHealth.Value -= damage;
+        currentHealth.Value = Mathf.Max(0, currentHealth.Value - damage);
 
         if (currentHealth.Value <= 0)
         {
-            currentHealth.Value = 100; // Leben direkt heilen
-            healthBarLocal.SetValue(currentHealth.Value);
-            healthBarGlobal.SetValue(currentHealth.Value);
-            RespawnClientRpc(); // Dem Client sagen: "Teleportier dich!"
+            ResetHealth();
+            RespawnClientRpc();
         }
     }
 
-    [ClientRpc]
-    void RespawnClientRpc()
+    /// <summary>
+    /// Resets the current health to the maximum value.
+    /// </summary>
+    private void ResetHealth()
     {
-        if (IsOwner) // Nur der betroffene Spieler führt das aus
-        {
-            var controller = GetComponent<CharacterController>();
-
-            // 1. Controller kurz ausmachen (wichtig!)
-            if (controller != null) controller.enabled = false;
-
-            // 2. Position setzen (Hol dir die Position vom SpawnManager)
-            transform.position = new Vector3(0, 30, 0); // Oder dein Spawn-Punkt
-
-            // 3. Controller wieder anmachen
-            if (controller != null) controller.enabled = true;
-
-            Debug.Log("Respawn lokal ausgeführt!");
-        }
+        currentHealth.Value = maxHealth;
     }
 
+    /// <summary>
+    /// Teleports the owning client to the spawn point and handles CharacterController state.
+    /// </summary>
+    [ClientRpc]
+    private void RespawnClientRpc()
+    {
+        if (!IsOwner) return;
+
+        var controller = GetComponent<CharacterController>();
+
+        if (controller != null) controller.enabled = false;
+        transform.position = spawnPoint;
+        if (controller != null) controller.enabled = true;
+    }
+
+    /// <summary>
+    /// Callback triggered when the currentHealth NetworkVariable changes.
+    /// </summary>
+    /// <param name="oldHealth">Previous health value.</param>
+    /// <param name="newHealth">Updated health value.</param>
     private void OnHealthChanged(int oldHealth, int newHealth)
     {
-        // 1. GLOBAL: Diese Bar soll JEDER Spieler bei JEDEM anderen sehen
-        if (healthBarGlobal != null)
-        {
-            healthBarGlobal.SetValue(newHealth);
-        }
-
-        // 2. LOCAL: Diese Bar (dein HUD) wird nur für dich selbst aktualisiert
-        if (IsOwner && healthBarLocal != null)
-        {
-            healthBarLocal.SetValue(newHealth);
-        }
-
-        if (newHealth <= 0) Debug.Log($"{gameObject.name} is dead!");
+        UpdateVisuals(newHealth);
     }
 
-    public override void OnNetworkDespawn()
+    /// <summary>
+    /// Updates the local and global health bars based on the current health value.
+    /// </summary>
+    /// <param name="value">The current health value to display.</param>
+    private void UpdateVisuals(int value)
     {
-        currentHealth.OnValueChanged -= OnHealthChanged;
+        if (healthBarGlobal != null)
+        {
+            healthBarGlobal.SetMaxValue(maxHealth);
+            healthBarGlobal.SetValue(value);
+        }
+
+        if (IsOwner && healthBarLocal != null)
+        {
+            healthBarLocal.SetMaxValue(maxHealth);
+            healthBarLocal.SetValue(value);
+        }
     }
 }
