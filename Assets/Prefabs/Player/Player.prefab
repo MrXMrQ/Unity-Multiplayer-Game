@@ -832,7 +832,7 @@ GameObject:
   - component: {fileID: 6917439768755211236}
   - component: {fileID: 827337849836048795}
   m_Layer: 0
-  m_Name: Text (TMP)
+  m_Name: PlayerName
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -854,7 +854,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.19}
+  m_AnchoredPosition: {x: 0, y: 0.12}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6917439768755211236
@@ -4134,6 +4134,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   nameTagText: {fileID: 827337849836048795}
+  nameTagContainer: {fileID: 1151217573081296277}
 --- !u!114 &2619530130615898335
 MonoBehaviour:
   m_ObjectHideFlags: 0

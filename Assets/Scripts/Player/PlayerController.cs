@@ -104,7 +104,7 @@ public class PlayerController : NetworkBehaviour
         }
 
         // Prüfen ob Steuerung blockiert ist (Pause oder Shop)
-        bool inputBlocked = PauseManager.IsLocalPaused || ShopMenu.IsLocalShopOpen;
+        bool inputBlocked = PauseManager.IsLocalPaused || ShopManager.IsLocalShopOpen;
 
         // Variablen für Bewegung vorbereiten
         float moveX = 0;

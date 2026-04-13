@@ -64,7 +64,7 @@ public class PlayerShooting : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsOwner || PauseManager.IsLocalPaused || ShopMenu.IsLocalShopOpen) return;
+        if (!IsOwner || PauseManager.IsLocalPaused || ShopManager.IsLocalShopOpen) return;
 
         HandleInput();
     }
