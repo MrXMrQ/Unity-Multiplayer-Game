@@ -3,7 +3,7 @@ using UnityEngine;
 using TMPro;
 using Unity.Collections; // Wichtig für FixedString
 
-public class PlayerNameDisplay : NetworkBehaviour
+public class PlayNameDisplay : NetworkBehaviour
 {
     [Header("UI Referenz")]
     public TextMeshProUGUI nameTagText;
@@ -20,7 +20,7 @@ public class PlayerNameDisplay : NetworkBehaviour
         // 1. Wenn ich der Besitzer bin, sende meinen Namen an den Server
         if (IsOwner)
         {
-            string localName = MainMenuControl.LocalPlayerName;
+            string localName = PlayMenuControl.LocalPlayerName;
             UpdateNameServerRpc(localName);
         }
 

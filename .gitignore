@@ -77,3 +77,4 @@ crashlytics-build.properties
 # Folders
 .build
 .build.zip
+.vsconfig
