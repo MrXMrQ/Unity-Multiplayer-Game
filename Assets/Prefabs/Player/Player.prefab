@@ -2195,8 +2195,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2619530130615898335}
-        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+      - m_Target: {fileID: 2635876107972846037}
+        m_TargetAssemblyTypeName: PauseManager, Assembly-CSharp
         m_MethodName: QuitGame
         m_Mode: 1
         m_Arguments:
@@ -3791,9 +3791,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2619530130615898335}
-        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
-        m_MethodName: TogglePause
+      - m_Target: {fileID: 2635876107972846037}
+        m_TargetAssemblyTypeName: PauseManager, Assembly-CSharp
+        m_MethodName: ResumeGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -3893,6 +3893,7 @@ GameObject:
   - component: {fileID: 5222841379731443717}
   - component: {fileID: 7100790716384692607}
   - component: {fileID: 9062243727306204942}
+  - component: {fileID: 2635876107972846037}
   - component: {fileID: 2619530130615898335}
   - component: {fileID: 6320826573314017986}
   - component: {fileID: 7568829971892735854}
@@ -4084,6 +4085,20 @@ MonoBehaviour:
   shopContent: {fileID: 6043213233331548331}
   playerHUD: {fileID: 310312964069286433}
   playerController: {fileID: 2619530130615898335}
+--- !u!114 &2635876107972846037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7815849164461968766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 087ba96164631d049be35310987d6786, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  pauseMenuPanel: {fileID: 7500905593757191099}
 --- !u!114 &2619530130615898335
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4105,7 +4120,6 @@ MonoBehaviour:
   playerCamera: {fileID: 7894143043517255009}
   firstPersonOffset: {x: 0, y: 0.6, z: 0}
   thirdPersonOffset: {x: 0, y: 2, z: -4}
-  pauseMenuPanel: {fileID: 7500905593757191099}
 --- !u!114 &6320826573314017986
 MonoBehaviour:
   m_ObjectHideFlags: 0

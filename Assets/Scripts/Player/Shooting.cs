@@ -61,7 +61,7 @@ public class Shooting : NetworkBehaviour
 
     void Update()
     {
-        if (!IsOwner || PlayerController.IsGamePaused) return;
+        if (!IsOwner || PauseManager.IsLocalPaused || ShopMenu.IsLocalShopOpen) return;
 
         // reload
         if (Input.GetKeyDown(KeyCode.R) && activeWeapon != null && currentAmmo < activeWeapon.magazineSize && !isReloading)

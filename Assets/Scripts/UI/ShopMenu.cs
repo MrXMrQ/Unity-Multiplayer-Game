@@ -3,15 +3,12 @@ using UnityEngine;
 
 public class ShopMenu : NetworkBehaviour
 {
+    // Eigene statische Variable für den Shop-Zustand
+    public static bool IsLocalShopOpen { get; private set; }
+
     [Header("UI Referenzen")]
     public GameObject shopContent;
     public GameObject playerHUD;
-    public PlayerController playerController;
-
-    private bool isShopOpen = false;
-
-    // Diese Methode braucht der PlayerController, um zu wissen, ob der Shop offen ist
-    public bool IsShopActive() { return isShopOpen; }
 
     public override void OnNetworkSpawn()
     {
@@ -25,7 +22,8 @@ public class ShopMenu : NetworkBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.P))
+        // Öffne Shop nur, wenn das normale Pause-Menü NICHT offen ist
+        if (Input.GetKeyDown(KeyCode.P) && !PauseManager.IsLocalPaused)
         {
             ToggleShop();
         }
@@ -33,35 +31,40 @@ public class ShopMenu : NetworkBehaviour
 
     public void ToggleShop()
     {
-        isShopOpen = !isShopOpen;
+        if (!IsOwner) return;
+
+        IsLocalShopOpen = !IsLocalShopOpen;
         ApplyShopState();
     }
 
     public void CloseShop()
     {
-        isShopOpen = false;
+        if (!IsOwner) return;
+
+        IsLocalShopOpen = false;
         ApplyShopState();
     }
 
     private void ApplyShopState()
     {
-        if (shopContent != null) shopContent.SetActive(isShopOpen);
+        if (shopContent != null) shopContent.SetActive(IsLocalShopOpen);
 
-        if (isShopOpen)
+        if (IsLocalShopOpen)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            PlayerController.IsGamePaused = true;
         }
         else
         {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-            // Fokus zurück zum Spiel
+            // Cursor nur sperren, wenn das Pause-Menü nicht auch gerade offen ist
+            if (!PauseManager.IsLocalPaused)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+
             if (UnityEngine.EventSystems.EventSystem.current != null)
                 UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
-
-            PlayerController.IsGamePaused = false;
         }
     }
 }
