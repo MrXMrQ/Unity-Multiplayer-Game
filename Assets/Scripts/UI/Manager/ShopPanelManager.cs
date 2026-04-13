@@ -2,7 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using TMPro;
 
-public class ShopPanel : MonoBehaviour
+public class ShopPanelManager : MonoBehaviour
 {
     [Header("Weapon Settings")]
     public WeaponData weapon;
