@@ -4156,6 +4156,7 @@ MonoBehaviour:
   playerCamera: {fileID: 7894143043517255009}
   firstPersonOffset: {x: 0, y: 0.6, z: 0}
   thirdPersonOffset: {x: 0, y: 2, z: -4}
+  lockCursorOnStart: 1
 --- !u!143 &6649933590631239428
 CharacterController:
   m_ObjectHideFlags: 0

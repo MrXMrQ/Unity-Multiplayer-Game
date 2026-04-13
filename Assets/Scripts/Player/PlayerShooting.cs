@@ -21,7 +21,7 @@ public class PlayerShooting : NetworkBehaviour
 
     private NetworkVariable<int> activeWeaponIndex = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    private PlayerController playerController;
+    private PlayerMovement playerController;
     private WeaponData activeWeapon;
     private GameObject currentWeaponInstance;
     private Transform shootPoint;
@@ -35,7 +35,7 @@ public class PlayerShooting : NetworkBehaviour
     /// </summary>
     public override void OnNetworkSpawn()
     {
-        playerController = GetComponent<PlayerController>();
+        playerController = GetComponent<PlayerMovement>();
 
         activeWeaponIndex.OnValueChanged += (oldIdx, newIdx) =>
         {
@@ -113,8 +113,8 @@ public class PlayerShooting : NetworkBehaviour
         SpawnTracer(target);
 
         RequestShootServerRpc(
-            playerController.playerCamera.transform.position,
-            playerController.playerCamera.transform.forward
+            playerController.PlayerCamera.transform.position,
+            playerController.PlayerCamera.transform.forward
         );
     }
 
@@ -156,7 +156,7 @@ public class PlayerShooting : NetworkBehaviour
     /// <returns>The world space position of the hit point or the maximum range point.</returns>
     private Vector3 GetTargetPoint()
     {
-        Ray ray = new Ray(playerController.playerCamera.transform.position, playerController.playerCamera.transform.forward);
+        Ray ray = new Ray(playerController.PlayerCamera.transform.position, playerController.PlayerCamera.transform.forward);
 
         if (Physics.Raycast(ray, out RaycastHit hit, activeWeapon.shootRange))
         {

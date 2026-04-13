@@ -27,6 +27,17 @@ public class PauseManager : NetworkBehaviour
         if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
     }
 
+    private void Update()
+    {
+        if (!IsOwner) return;
+
+        // Reagiere auf Escape, um das Menü zu öffnen/schließen
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+        }
+    }
+
     /// <summary>
     /// Toggles the pause menu state and updates cursor and UI visibility.
     /// </summary>
