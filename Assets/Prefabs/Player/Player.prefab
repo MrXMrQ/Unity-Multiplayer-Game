@@ -3891,10 +3891,10 @@ GameObject:
   - component: {fileID: 1776698729156518713}
   - component: {fileID: 88877399653513679}
   - component: {fileID: 5222841379731443717}
+  - component: {fileID: 6320826573314017986}
   - component: {fileID: 7100790716384692607}
   - component: {fileID: 9062243727306204942}
   - component: {fileID: 2635876107972846037}
-  - component: {fileID: 6320826573314017986}
   - component: {fileID: 7568829971892735854}
   - component: {fileID: 2619530130615898335}
   - component: {fileID: 6649933590631239428}
@@ -4048,6 +4048,28 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &6320826573314017986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7815849164461968766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8133c16649bc9f4990b4daf25013b4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  maxHealth: 100
+  spawnPoint: {x: 0, y: 10, z: 0}
+  healthBarLocal: {fileID: 3720898190329172744}
+  healthBarGlobal: {fileID: 6334877739066174554}
+  currentHealth:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 100
 --- !u!114 &7100790716384692607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4098,28 +4120,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   pauseMenuPanel: {fileID: 7500905593757191099}
---- !u!114 &6320826573314017986
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7815849164461968766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c8133c16649bc9f4990b4daf25013b4d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  maxHealth: 100
-  spawnPoint: {x: 0, y: 10, z: 0}
-  healthBarLocal: {fileID: 3720898190329172744}
-  healthBarGlobal: {fileID: 6334877739066174554}
-  currentHealth:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 100
 --- !u!114 &7568829971892735854
 MonoBehaviour:
   m_ObjectHideFlags: 0

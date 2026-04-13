@@ -18,7 +18,7 @@ public class ShopPanel : MonoBehaviour
         if (localPlayer != null)
         {
             // Waffe wechseln
-            Shooting shootingScript = localPlayer.GetComponent<Shooting>();
+            PlayerShooting shootingScript = localPlayer.GetComponent<PlayerShooting>();
             if (shootingScript != null) shootingScript.ChangeWeapon(weapon);
 
             // Shop des Spielers schliessen
